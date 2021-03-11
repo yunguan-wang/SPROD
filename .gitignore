@@ -1,0 +1,5 @@
+.Rproj*/
+data/
+*archive/
+*test*
+*.pdf
