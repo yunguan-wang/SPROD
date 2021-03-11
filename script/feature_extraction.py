@@ -13,13 +13,13 @@ python /project/shared/xiao_wang/projects/MOCCA/code/feature_extraction.py \
     IF /project/shared/xiao_wang/projects/MOCCA/data/Visium/ovarian_cancer_immune/intermediate
     
 '''
-from skimage import io, img_as_float32, morphology
 import numpy as np
 import pandas as pd
 import os
+import sys
+from skimage import io, img_as_float32, morphology
 from skimage.feature import greycomatrix, greycoprops
 from itertools import product
-import sys
 
 
 # Todo: decide if checking metadata function should be added, or force the user to provide the correct format.
@@ -80,5 +80,3 @@ col_names = ['_'.join(x) for x in col_names]
 col_names = ['_'.join(x) for x in product(['f0','f1','f2'],['median','std'])] + col_names
 spot_features = pd.DataFrame(spot_features,index=img_meta.index,columns=col_names)
 spot_features.to_csv(output_path + '/Spot_level_haralick_features.csv')
-
-
