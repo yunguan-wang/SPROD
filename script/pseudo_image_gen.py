@@ -15,8 +15,9 @@ A conda env is available in the project folder.
 # output 4: Clustering plot, for debug purpose only.
 
 # example usage:
+module load R
 conda activate /project/shared/xiao_wang/projects/MOCCA/conda_env
-python /project/shared/xiao_wang/projects/MOCCA/code/pseudo_image_gen.py \
+python /project/shared/xiao_wang/projects/MOCCA/code/Spatial_denoise/script/pseudo_image_gen.py \
     /project/shared/xiao_wang/projects/MOCCA/data/Visium/LN/Counts.txt \
     /project/shared/xiao_wang/projects/MOCCA/data/Visium/LN/Spot_metadata.csv
    
@@ -29,8 +30,6 @@ import sys
 from skimage import io, morphology
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import minmax_scale, scale
-from umap import UMAP
-import hdbscan
 import seaborn as sns
 
 def cal_norm_dispersion(cts):
@@ -85,7 +84,9 @@ if not os.path.exists(output_path):
 
 # Dimension reduction, can be skipped if it is already done.
 if not os.path.exists(output_path + '/dimention_reduced_data_for_clustering.csv'):
+    from umap import UMAP
     # Reads data, and align two matrices.
+    print('Loading counts data and performing dimension reduction using UMAP.')
     cts = pd.read_csv(cts_fn,sep='\t',index_col=0)
     spot_meta = pd.read_csv(spot_metadata_fn, index_col=0)
     cm_samples = [x for x in cts.index if x in spot_meta.index]
@@ -117,21 +118,26 @@ if not os.path.exists(output_path + '/dimention_reduced_data_for_clustering.csv'
         clustering_data, index = cts.index
         ).to_csv(output_path + '/dimention_reduced_data_for_clustering.csv')
 else: # If the dimention reduced data exists, use it.
+    print('Found existing dimension reduced data.')
     clustering_data = pd.read_csv(
         output_path + '/dimention_reduced_data_for_clustering.csv', index_col=0)
     spot_meta = pd.read_csv(spot_metadata_fn, index_col=0)
     
 # Clustering the expression data.
 if algo == 'hdbscan':
+    import hdbscan
     clusterer = hdbscan.HDBSCAN(
         min_cluster_size = 25, min_samples = 30, prediction_data=True
         ).fit(clustering_data)
     soft_clusters = hdbscan.all_points_membership_vectors(clusterer)
-elif algo == 'DP':
-    # Todo: call DP.r or implement a pure python version.
-    pass
-    # os.system('Rscript dp.r umap_comps.csv')
-    # soft_clusters = pd.read_csv('dp_clusters.csv', index_col=0)
+elif algo == 'dp':
+    os.system(
+        'Rscript {} {} {}'.format(
+            '/home2/s190548/work_xiao/projects/MOCCA/code/Spatial_denoise/script/dirichlet_process_clustering.R',
+            output_path + '/dimention_reduced_data_for_clustering.csv',
+            output_path
+        ))
+    soft_clusters = pd.read_csv(output_path + '/dp_cluster_prob.csv', index_col=0).values
 
 # Generating pseudo image for visulizing purpose.
 top3 = np.argsort(soft_clusters.sum(axis=0))[::-1][:3] # Select only the top three clusters.
@@ -157,8 +163,8 @@ pd.DataFrame(
 ##########
 # Debug purpose codes, output clusters in UMAP 2D space.
 _ = plt.figure(figsize=(6,6))
+cluster_labels = np.argmax(soft_clusters, axis=1)
 sns.scatterplot(
-    clustering_data.iloc[:,0], clustering_data.iloc[:,1], s=5, hue = clusterer.labels_)
+    x = clustering_data.iloc[:,0], y = clustering_data.iloc[:,1], s=5,
+    hue = cluster_labels)
 plt.savefig(output_path + '/UMAP_clustering.pdf')
-
-
