@@ -3,3 +3,4 @@ data/
 *archive/
 *test*
 *.pdf
+.gitignore
