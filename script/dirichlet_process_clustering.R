@@ -99,5 +99,4 @@ colnames(cluster_prob_matrix) <- paste(
 write.table(
     cluster_prob_matrix,
     file = paste(output_path, "/dp_cluster_prob.csv", sep = ""),
-    quote = F, row.names = T, col.names = T, sep = ","
-)
+    quote = F, row.names = T, col.names = T, sep = ",")
