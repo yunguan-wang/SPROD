@@ -30,7 +30,7 @@ f_matrix <- read.table(f_matrix_fn, row.names = 1, header = T, sep = ",")
 max_iter <- 200
 up_alpha_every <- 10
 max_spots <- 500
-
+set.seed(0)
 ########  sub-sample f_matrix  ############
 # DP is slow. So we sub-sample a portion of f_matrix to detect clusters
 # but calculate probabilities for all spots
