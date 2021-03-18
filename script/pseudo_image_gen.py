@@ -3,9 +3,10 @@ This script will generate a matrix of pseudo image features from expression matr
 A conda env is available in the project folder. 
 
 # input 1 : counts matrix, raw counts, sample by gene name
-# input 2 : spot metadata, MUST have 'row','col', 'X', 'Y', and 'Spor_radius' columns.
+# input 2 : spot metadata, MUST have 'row','col' columns.
 # input 3 : output path, optional, default is ./intermediate
 # input 4 : clustering algorithm, optional. {'hdbscan','dp'}. Defaul 'hdbscan'
+# input 5 : input dataset type, optional. {'slideseq','visium'}. Defaul 'slideseq'
 
 # output 1: pseudo_image_features.csv
                 pseudo image feature matrix csv, sample by gene
@@ -19,7 +20,8 @@ module load R
 conda activate /project/shared/xiao_wang/projects/MOCCA/conda_env
 python /project/shared/xiao_wang/projects/MOCCA/code/Spatial_denoise/script/pseudo_image_gen.py \
     /project/shared/xiao_wang/projects/MOCCA/data/Visium/LN/Counts.txt \
-    /project/shared/xiao_wang/projects/MOCCA/data/Visium/LN/Spot_metadata.csv
+    /project/shared/xiao_wang/projects/MOCCA/data/Visium/LN/Spot_metadata.csv \
+    dp visium
    
 '''
 import pandas as pd
@@ -27,7 +29,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 import sys
-from skimage import io, morphology
+from skimage import io
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import minmax_scale, scale
 import seaborn as sns
@@ -79,10 +81,17 @@ try:
     algo = sys.argv[4]
 except IndexError:
     algo = 'hdbscan'
+
+try:
+    input_type = sys.argv[5]
+except IndexError:
+    input_type = 'slideseq'
+
 if not os.path.exists(output_path):
     os.makedirs(output_path)
 
 # Dimension reduction, can be skipped if it is already done.
+print("Processing {}".format(cts_fn[:-10]))
 if not os.path.exists(output_path + '/dimention_reduced_data_for_clustering.csv'):
     from umap import UMAP
     # Reads data, and align two matrices.
@@ -101,27 +110,32 @@ if not os.path.exists(output_path + '/dimention_reduced_data_for_clustering.csv'
     # CPM normalization
     cts = 1e4 * cts.apply(lambda x: x/x.sum(), axis=1)
     cts = cts[valid_genes]
+    cts = cts.dropna() # some visium data has blank spots
 
     # Identify highly variable genes.
     # Todo: Evaluate if this cutoff makes sense. Or make it a parameter.
-    means, disp = cal_norm_dispersion(cts)
-    hvg = cts.columns[(means>0.01) & (disp>0.01)]
-    cts_hvg = np.log2(cts[hvg]+1)
-    cts_hvg = cts_hvg.reindex(spot_meta.index)
+    if cts.shape[1] > 3000: # targeted sequencing libarary
+        means, disp = cal_norm_dispersion(cts)
+        hvg = cts.columns[(means>0.01) & (disp>0.01)]
+    else:
+        hvg = cts.columns
+    cts_hvg = cts[hvg]
+    cts_hvg.loc[:,:] = scale(np.log2(cts_hvg+1))
+    spot_meta = spot_meta.loc[cts_hvg.index]
+
 
     # Dimention reduction using UMAP on top 25 PCs. 5 Umap components are used.
     # Todo: Evaluate if these works well in practice. A smaller number of PCs will tend to capture more distinct clusters.
     clustering_data = UMAP(
         n_neighbors = 15,n_components=5, min_dist=0.1,spread=1,random_state=0
-        ).fit_transform(PCA(25).fit_transform(scale(cts_hvg)))
-    pd.DataFrame(
-        clustering_data, index = cts.index
-        ).to_csv(output_path + '/dimention_reduced_data_for_clustering.csv')
+        ).fit_transform(PCA(25).fit_transform(cts_hvg))
+    clustering_data = pd.DataFrame(clustering_data, index = cts.index)
+    clustering_data.to_csv(output_path + '/dimention_reduced_data_for_clustering.csv')
 else: # If the dimention reduced data exists, use it.
     print('Found existing dimension reduced data.')
     clustering_data = pd.read_csv(
         output_path + '/dimention_reduced_data_for_clustering.csv', index_col=0)
-    spot_meta = pd.read_csv(spot_metadata_fn, index_col=0)
+    spot_meta = pd.read_csv(spot_metadata_fn, index_col=0).loc[clustering_data.index]
     
 # Clustering the expression data.
 if algo == 'hdbscan':
@@ -131,30 +145,41 @@ if algo == 'hdbscan':
         ).fit(clustering_data)
     soft_clusters = hdbscan.all_points_membership_vectors(clusterer)
 elif algo == 'dp':
-    os.system(
-        'Rscript {} {} {}'.format(
-            '/home2/s190548/work_xiao/projects/MOCCA/code/Spatial_denoise/script/dirichlet_process_clustering.R',
-            output_path + '/dimention_reduced_data_for_clustering.csv',
-            output_path
-        ))
+    if os.path.exists(output_path + '/dp_cluster_prob.csv'):
+        print('Found existing soft clusters, skipping DP clustering.')
+    else:
+        os.system(
+            'Rscript {} {} {}'.format(
+                '/home2/s190548/work_xiao/projects/MOCCA/code/Spatial_denoise/script/dirichlet_process_clustering.R',
+                output_path + '/dimention_reduced_data_for_clustering.csv',
+                output_path
+            )
+        )
     soft_clusters = pd.read_csv(output_path + '/dp_cluster_prob.csv', index_col=0).values
 
-# Generating pseudo image for visulizing purpose.
-top3 = np.argsort(soft_clusters.sum(axis=0))[::-1][:3] # Select only the top three clusters.
-soft_clusters_top3 = soft_clusters[:,top3]
-pseudo_img = np.zeros(
-    [spot_meta.Row.max() + 1,spot_meta.Col.max() + 1, 3], dtype='uint8')
-pseudo_img_clusters = np.zeros(pseudo_img.shape, dtype='uint8')
-spot_r = spot_meta.Spot_radius[0]
-spot_mask = morphology.disk(spot_r)
-for i in range(spot_meta.shape[0]):
-    row, col, X, Y = spot_meta.iloc[i,1:5].astype(int)
-    pseudo_img_clusters[row,col,:] = 255 * soft_clusters_top3[i,:]
-# Scale the pseudo image so that each channel range from 0-255
-pseudo_img_clusters = (
-    255 * minmax_scale(pseudo_img_clusters.reshape(-1,3)).reshape(pseudo_img.shape)
-    ).astype('uint8')
-io.imsave(output_path + '/Pseudo_image_cluster_probabilities.tif',pseudo_img_clusters)
+if input_type == 'visium': 
+    # Generating pseudo image for visulizing purpose.
+    top3 = np.argsort(soft_clusters.sum(axis=0))[::-1][:3] # Select only the top three clusters.
+    soft_clusters_top3 = soft_clusters[:,top3]
+    pseudo_img = np.zeros(
+        [spot_meta.Row.max() + 1,spot_meta.Col.max() + 1, 3], dtype='uint8')
+    pseudo_img_clusters = np.zeros(pseudo_img.shape, dtype='uint8')
+    spot_r = spot_meta.Spot_radius[0]
+    for i in range(spot_meta.shape[0]):
+        row, col = spot_meta.iloc[i][['Row','Col']].astype(int)
+        pseudo_img_clusters[row,col,:] = 255 * soft_clusters_top3[i,:]
+    # Scale the pseudo image so that each channel range from 0-255
+    pseudo_img_clusters = (
+        255 * minmax_scale(pseudo_img_clusters.reshape(-1,3)).reshape(pseudo_img.shape)
+        ).astype('uint8')
+    io.imsave(output_path + '/Pseudo_image_cluster_probabilities.tif',pseudo_img_clusters)
+elif input_type == 'slideseq':
+    _ = plt.figure(figsize=(10,10))
+    sns.scatterplot(
+        x = spot_meta['X'], y =  spot_meta['Y'], s=2,
+        hue = np.argmax(soft_clusters, axis=1).astype(str))
+    plt.savefig(output_path + '/Pseudo_image_cluster_probabilities.pdf')
+    plt.close()
 
 # Output soft cluster probabilities as the pseudo image features.
 pd.DataFrame(
@@ -168,3 +193,4 @@ sns.scatterplot(
     x = clustering_data.iloc[:,0], y = clustering_data.iloc[:,1], s=5,
     hue = cluster_labels)
 plt.savefig(output_path + '/UMAP_clustering.pdf')
+plt.close()
