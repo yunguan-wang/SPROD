@@ -21,25 +21,7 @@ from skimage import io, img_as_float32, morphology
 from skimage.feature import greycomatrix, greycoprops
 from itertools import product
 
-
-# Todo: decide if checking metadata function should be added, or force the user to provide the correct format.
-input_path = sys.argv[1]
-input_type = sys.argv[2] # {'he' or 'if'}
-
-try:
-    output_path = sys.argv[3]
-except IndexError:
-    output_path = './intermediate'
-
-os.chdir(input_path)
-if not os.path.exists(output_path):
-    os.makedirs(output_path)
-
-print('Processing {}'.format(input_path))
-if os.path.exists(output_path + '/Spot_level_haralick_features.csv'):
-    print('Image feature already extracted. Stop operation.')
-
-else:
+def extract_img_features(input_path, input_type, output_path):
     img_tif = [x for x in os.listdir(input_path) if 'tif' in x][0]
     img_meta = pd.read_csv('Spot_metadata.csv', index_col=0)
     if input_type == 'if':
@@ -86,3 +68,23 @@ else:
     col_names = ['_'.join(x) for x in product(['f0','f1','f2'],['median','std'])] + col_names
     spot_features = pd.DataFrame(spot_features,index=img_meta.index,columns=col_names)
     spot_features.to_csv(output_path + '/Spot_level_haralick_features.csv')
+
+if __name__ == '__main__':
+    # Todo: decide if checking metadata function should be added, or force the user to provide the correct format.
+    input_path = sys.argv[1]
+    input_type = sys.argv[2] # {'he' or 'if'}
+
+    try:
+        output_path = sys.argv[3]
+    except IndexError:
+        output_path = './intermediate'
+
+    os.chdir(input_path)
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+
+    print('Processing {}'.format(input_path))
+    if os.path.exists(output_path + '/Spot_level_haralick_features.csv'):
+        print('Image feature already extracted. Stop operation.')
+    else:
+        extract_img_features(input_path, input_type, output_path)

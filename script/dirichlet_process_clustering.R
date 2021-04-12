@@ -96,6 +96,7 @@ for (i in 1:length(cluster_prob))
 rownames(cluster_prob_matrix) <- rownames(f_matrix)
 colnames(cluster_prob_matrix) <- paste(
     "cluster", 1:dim(cluster_prob_matrix)[2], sep = "")
+cluster_prob_matrix=cluster_prob_matrix/rowSums(cluster_prob_matrix)
 write.table(
     cluster_prob_matrix,
     file = paste(output_path, "/dp_cluster_prob.csv", sep = ""),
