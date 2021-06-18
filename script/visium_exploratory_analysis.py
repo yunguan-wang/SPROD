@@ -92,6 +92,7 @@ os.chdir(oc)
 img_tif = [x for x in os.listdir(oc) if 'tif' in x][0]
 
 # %%
+# LN dataset exploratory analysis
 oc = '/project/shared/xiao_wang/projects/MOCCA/data/Visium/LN/'
 os.chdir(oc)
 cts = pd.read_csv(os.path.join(oc, 'Counts.txt'),sep='\t',index_col=0)
@@ -107,6 +108,28 @@ gm = marker_overlay('IGHD',spot_meta, cts, img, normalizing=True, img_type='IF')
 gm = marker_overlay('CD3D',spot_meta, cts, img, normalizing=True, img_type='IF')
 gm = marker_overlay('MS4A1',spot_meta, cts, img, normalizing=True, img_type='IF')
 gm = marker_overlay('CD1C',spot_meta, cts, img, normalizing=True, img_type='IF')
+#%%
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import scale, minmax_scale
+img_features = pd.read_csv(
+    '/project/shared/xiao_wang/projects/MOCCA/data/Visium/LN/intermediate/Spot_level_haralick_features.csv',
+    index_col=0)
+spot_meta = pd.read_csv('/project/shared/xiao_wang/projects/MOCCA/data/Visium/LN/Spot_metadata.csv', 
+index_col=0)
+top3 = minmax_scale(PCA(3,whiten=True).fit_transform(scale(img_features)))
+pseudo_img = np.zeros(
+    [spot_meta.Row.max() + 1,spot_meta.Col.max() + 1, 3], dtype='uint8')
+intensity_img = pseudo_img.copy()
+spot_r = spot_meta.Spot_radius[0]
+for i in range(spot_meta.shape[0]):
+    row, col = spot_meta.iloc[i][['Row','Col']].astype(int)
+    pseudo_img[row,col,:] = 255 * top3[i,:]
+    intensity_img[row,col,:] = img_features.iloc[i,[0,2,4]]
+#%%
+_, ax = plt.subplots(1,2,figsize=(12,6))
+io.imshow(pseudo_img, ax=ax[1])
+io.imshow(intensity_img, ax=ax[0])
+
 #%%
 from matplotlib.backends.backend_pdf import PdfPages
 os.chdir(oc)
@@ -182,6 +205,4 @@ for ax, gene in zip(axes, geneset):
     ax.set_title('Correlation:{:.2f}'.format(cor))
     ax.set_ylabel(gene)
 # %%
-# %%
-
 # %%
