@@ -40,6 +40,8 @@ def make_patches(input_path, margin, patch_scale,output_path):
     cts = pd.read_csv(
         os.path.join(input_path,'Counts.txt'), index_col=0, sep='\t'
     )
+    # Use cpm (1e4) now
+    cts = 1e4 * cts.apply(lambda x: x/x.sum(), axis=1)
     features = pd.read_csv(
         os.path.join(input_path, 'pseudo_image_features.csv'), index_col=0
     )

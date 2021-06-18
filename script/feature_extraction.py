@@ -28,7 +28,7 @@ def extract_img_features(input_path, input_type, output_path):
         # the indexing is a workaround for the strange Visium if image channels.
         img = io.imread(img_tif)[:,:,[3,1,0]]
     else:
-            img = io.imread(img_tif)
+        img = io.imread(img_tif)
     img = img_as_float32(img)
     img = (255*img).astype('uint8')
 

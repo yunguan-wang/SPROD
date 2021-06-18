@@ -2,7 +2,7 @@ import pandas as pd
 import os
 import sys
 
-def stiching_denoised_patches(input_path):
+def stiching_denoised_patches(input_path, output_fn = None):
     cts_files = sorted([x for x in os.listdir(input_path) if 'Counts.txt' in x])
     denoised_fns = sorted([x for x in os.listdir(input_path) if 'denoised' in x])
     assert(len(cts_files) == len(denoised_fns)), 'Slideseq patch data not properly denoised'
@@ -18,12 +18,17 @@ def stiching_denoised_patches(input_path):
         core_idx = metadata[metadata.patch_core == core_name].index
         denoised_mtx = denoised_mtx.append(denoised_cts.loc[core_idx])
     
-    denoised_mtx.to_hdf(
-        input_path.replace('/patches','/denoised_cts.h5df'), key='denoised')
-    denoised_mtx.to_csv(input_path.replace('/patches','/denoised_cts.csv'))
+    if output_fn is None:
+        output_fn = input_path.replace('/patches','/denoised_cts.h5df')
+
+    denoised_mtx.to_hdf(output_fn, key='denoised')
 
 if __name__ == '__main__':
     input_path = sys.argv[1]
-    stiching_denoised_patches(input_path)
+    try:
+        output_fn = sys.argv[2]
+    except IndexError:
+        output_fn = None
+    stiching_denoised_patches(input_path, output_fn)
 
 
