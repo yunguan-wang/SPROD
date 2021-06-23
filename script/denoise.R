@@ -125,21 +125,21 @@ if (!is.na(opt$i)){
   output_path= final_list$output_path # output path
   project_name= final_list$project_name
 }else{
-  counts_fn <- opt$e
-  spot_meta_fn <- opt$c
-  image_features_fn <- opt$f
-  N_PC=opt$n
+  counts_fn <- opt$Exp
+  spot_meta_fn <- opt$Cspot
+  image_features_fn <- opt$ImageFeature
+  N_PC=opt$numberPC
   um =opt$umap
-  R_ratio=opt$r # Spot neighborhood radius ratio, 0-1, radius=R*min(xmax-xmin,ymax-ymin)
-  U=opt$u # perplexity, Tunable
-  K=opt$k # latent space dimension, Tunable
-  LAMBDA=opt$l # regularizer, tunable
-  L_E=opt$le # regularizer for denoising
-  margin=opt$m # Margin for bisection search, smaller = slower => accuracy up 
+  R_ratio=opt$Rratio # Spot neighborhood radius ratio, 0-1, radius=R*min(xmax-xmin,ymax-ymin)
+  U=opt$U # perplexity, Tunable
+  K=opt$K # latent space dimension, Tunable
+  LAMBDA=opt$lambda # regularizer, tunable
+  L_E=opt$L_E # regularizer for denoising
+  margin=opt$margin # Margin for bisection search, smaller = slower => accuracy up 
   d = opt$diagNeighbor
-  script_path=opt$s # path to the software folder
-  output_path=opt$o # output path
-  project_name=opt$p
+  script_path=opt$scriptPath # path to the software folder
+  output_path=opt$outputPath # output path
+  project_name=opt$projectID
 }
 cat(paste("N_PC:",N_PC,"umap",um,"R_ratio:",R_ratio,"U:",U,"K",K,"LAMBDA:",LAMBDA,"L_E",L_E,"margin:",margin,"W_diag",d,"project ID:",project_name))
 cat("\n\n")
@@ -185,7 +185,7 @@ source(paste(script_path,"/script/denoise_functions.R",sep=""))
 Power_tsne_factor=7
 
 ###### read input######
-E=as.matrix(read.table(counts_fn,row.names = 1,header = T))
+E=as.matrix(read.table(counts_fn,row.names = 1,header = T, sep='\t'))
 C=read.csv(spot_meta_fn,row.names = 1,header = T,stringsAsFactors=F)
 R=min(max(C$X)-min(C$X),max(C$Y)-min(C$Y))*R_ratio
 IF=as.matrix(read.csv(image_features_fn,row.names=1,header=T))
