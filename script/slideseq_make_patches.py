@@ -87,6 +87,10 @@ def make_patches(input_path, margin, patch_scale,output_path):
         _ = p.map(mpl_writer, patches)
 
 def subsample_patches(input_path, output_path, number_batches = 10):
+    """
+    sample counts into 1/10 size patches. By default this is done 10 times, \
+    making 100 patches where each cell is represented 10 times.
+    """
     spot_meta = pd.read_csv(
         os.path.join(input_path,'Spot_metadata.csv'), index_col=0
     )

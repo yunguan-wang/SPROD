@@ -162,20 +162,6 @@ def extract_img_features(
     )
     return text_features, intensity_features
 
-"""
-    input_path : str
-        input folder containing all necessary files. A Spot_metadata.csv and a tif file.
-    input_type : str
-        input image type, select from {'if','he'}.
-    output_path : str
-        output folder path.
-    img : None or np.array, optional
-        alternative input for image, will override input_path.
-    img_meta : None or np.array, optional
-        alternative input for image metadata, will override input_path.
-    feature_mask_shape : {'spot', 'block'}
-        type of feature extracted.
-"""
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
