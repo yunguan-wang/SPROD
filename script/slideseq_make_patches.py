@@ -2,6 +2,7 @@ import pandas as pd
 import os
 from multiprocessing import Pool
 import sys
+import numpy as np
 
 def mpl_writer(patch):
     patch_name = patch[0]
@@ -85,9 +86,37 @@ def make_patches(input_path, margin, patch_scale,output_path):
     with Pool(16) as p:
         _ = p.map(mpl_writer, patches)
 
+def subsample_patches(input_path, output_path, number_batches = 10):
+    spot_meta = pd.read_csv(
+        os.path.join(input_path,'Spot_metadata.csv'), index_col=0
+    )
+    cts = pd.read_csv(
+        os.path.join(input_path,'Counts.txt'), index_col=0, sep='\t'
+    )
+    # Use cpm (1e4) now
+    cts = 1e4 * cts.apply(lambda x: x/x.sum(), axis=1)
+    features = pd.read_csv(
+        os.path.join(input_path, 'pseudo_image_features.csv'), index_col=0
+    )
+    patches = []
+    for i in range(number_batches):
+        patch_ids = np.random.randint(0,10,size = cts.shape[0])
+        for patch_id in range(10):
+            mask = (patch_ids == patch_id)
+            patch_name = 'Batch_{}_patch_{}'.format(i, patch_id)
+            patch_meta = spot_meta[mask]
+            patch_cts = cts[mask]
+            patch_features = features[mask]
+            patches.append([
+                patch_name,output_path, patch_meta,patch_cts,patch_features
+            ])
+    # use mp to speed up IO.
+    with Pool(16) as p:
+        _ = p.map(mpl_writer, patches)
+
 if __name__ == '__main__':
     # cmd running mode will process all slideseq data.
-    # input_path = '/project/shared/xiao_wang/projects/MOCCA/data/Sprod_ready_data/slideseq/Puck_190921_19'
+    # input_path = '/project/shared/xiao_wang/projects/MOCCA/data/Sprod_ready_data/slideseq/Puck_200115_08'
     try:
         input_path = sys.argv[1]
     # if no input_path are defined, using default cmd running mode.
@@ -105,9 +134,11 @@ if __name__ == '__main__':
     
     for slideseq_path in os.listdir(input_path):
         slideseq_path = os.path.abspath(os.path.join(input_path,slideseq_path))
-        output_path = os.path.join(slideseq_path,'patches')
+        # output_path = os.path.join(slideseq_path,'patches')
+        output_path = os.path.join(slideseq_path,'subsample_patches')
         if os.path.exists(output_path):
             os.system('rm -r {}'.format(output_path))
         os.makedirs(output_path)
         print('Processing {}'.format(slideseq_path))
-        make_patches(slideseq_path, margin, patch_scale,output_path)
+        # make_patches(slideseq_path, margin, patch_scale,output_path)
+        subsample_patches(slideseq_path, output_path)
