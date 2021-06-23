@@ -33,10 +33,10 @@ option_list = list(
               help="Extracted image features"),
   make_option(c("-n", "--numberPC"), action="store",
               default = -1,type = 'double',
-              help="# Number of PCs to use. positive integers. set to -1 to disable, and use the original IF matrix"),
+              help="# Number of PCs to use. positive integers. by default set to -1 to use the number of PCs the same as the numebr of features"),
   make_option(c("-x","--umap"),action="store_true",dest = "umap",
               default = FALSE,type = "logical",
-              help ="# Use UMAP of Image features or NOT"),
+              help ="# Use UMAP of Image features or NOT. By default set to FALSE, which the PCA is used to transform IF."),
   make_option(c("-r", "--Rratio"), action="store", 
               default=0.08,type = 'double',
               help="Spot neighborhood radius ratio, 0-1, radius=R*min(xmax-xmin,ymax-ymin)"), 
@@ -215,9 +215,8 @@ if (um){
 }else{
   if (N_PC>0) {
     IF=prcomp(IF)$x[,1:min(N_PC,dim(IF)[2])]
-    cat("IF: PCA done!\n")
   }else{
-    cat("IF: No Transformation!\n")
+    IF=prcomp(IF)$x[,1:dim(IF)[2]]
   }
 }
    # Preprocessing the features with PCA or tSNE, optional
