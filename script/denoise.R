@@ -215,9 +215,8 @@ if (um){
 }else{
   if (N_PC>0) {
     IF=prcomp(IF)$x[,1:min(N_PC,dim(IF)[2])]
-    cat("IF: PCA done!\n")
   }else{
-    cat("IF: No Transformation!\n")
+    IF=prcomp(IF)$x[,1:dim(IF)[2]]
   }
 }
    # Preprocessing the features with PCA or tSNE, optional
