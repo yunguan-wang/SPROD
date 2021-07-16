@@ -75,9 +75,18 @@ option_list = list(
               Please refer to the example: Project_info.txt")
 )
 opt = parse_args(OptionParser(option_list=option_list))
+
+#########manual input#######
+#opt$Rratio = 0.1
+#opt$K = 10
+#opt$lambda = 3
+#opt$L_E = 0.625
+#opt$projectID = "BC_trial2"
+#opt$input = "/project/shared/xiao_wang/projects/MOCCA/code/Pseudotime/Project_info_bc2.txt"
+
 ###########  define input  ##############
 cat("Inputting...\n")
-if (!is.na(opt$i)){
+if (!is.na(opt$input)){
   Input <- read.table(opt$i, row.names=1,header = F,sep = "\t") ####need check here###
   Input<- as.list(data.frame(t(Input)))
   Input$Input_file <-unlist(strsplit(Input$Input_file," "))
@@ -143,8 +152,7 @@ if (!is.na(opt$i)){
 }
 cat(paste("N_PC:",N_PC,"umap",um,"R_ratio:",R_ratio,"U:",U,"K",K,"LAMBDA:",LAMBDA,"L_E",L_E,"margin:",margin,"W_diag",d,"project ID:",project_name))
 cat("\n\n")
-
-
+#counts_fn
 #####original######
 #counts_fn=args[1] # Expression matrix.
 #spot_meta_fn=args[2] # Spot metadata, contains X, Y coordinates.
@@ -165,6 +173,7 @@ cat("\n\n")
 
 library(distances)
 library(Rcpp)
+library(dplyr)
 
 if (Sys.getenv("RSTUDIO") == "1")
 {
@@ -184,16 +193,15 @@ source(paste(script_path,"/script/denoise_functions.R",sep=""))
 # about this in the paper
 Power_tsne_factor=7
 
-###### read input######
-E=as.matrix(read.table(counts_fn,row.names = 1,header = T, sep='\t'))
+##########read input######
+E=as.matrix(read.table(counts_fn,row.names = 1,header = T))
 C=read.csv(spot_meta_fn,row.names = 1,header = T,stringsAsFactors=F)
 R=min(max(C$X)-min(C$X),max(C$Y)-min(C$Y))*R_ratio
 IF=as.matrix(read.csv(image_features_fn,row.names=1,header=T))
 if (any(rownames(E)!=rownames(C)) || any(rownames(E)!=rownames(IF)))
-  {stop("Spot IDs mismatch!")}
+{stop("Spot IDs mismatch!")}
 
 #######  initialization  ###############
-
 cat("initializing...\n")
 # proximity matrix
 P=as.matrix(dist(C[,c("X","Y")],diag = FALSE))<=R
@@ -219,7 +227,9 @@ if (um){
     IF=prcomp(IF)$x[,1:dim(IF)[2]]
   }
 }
-   # Preprocessing the features with PCA or tSNE, optional
+cat("IF is:\n")
+head(IF)
+# Preprocessing the features with PCA or tSNE, optional
 #cat(paste0("Image feature:",head(IF),"\n"))
 #######  spatial denoise  ################
 cat("denoising...\n")
@@ -230,16 +240,17 @@ euc_dist2=as.matrix(dist(IF,diag = FALSE))^2
 # probably will need some work to improve the computational efficiency
 # of p_n_n. future work
 p_n_n=sapply(1:dim(IF)[1], 
-  function(n) calculate_spot_dist(n,sigma_n,euc_dist2))
+             function(n) calculate_spot_dist(n,sigma_n,euc_dist2))
 p_nn_tsne=1-(p_n_n + t(p_n_n))/2
 p_nn_tsne=p_nn_tsne^(dim(IF)[1]/Power_tsne_factor)
+#hist(p_nn_tsne)
 
 # Build a graph based on image features and spot closeness
 while (1==1)
 {
   ALPHA[]=optim(as.vector(ALPHA),fn=fr,gr=gr,method='L-BFGS-B',
-    lower=0,upper=P*1,data=list(LAMBDA, p_nn_tsne, P , K),
-    control=list(trace=T))$par 
+                lower=0,upper=P*1,data=list(LAMBDA, p_nn_tsne, P , K),
+                control=list(trace=T))$par 
   
   if (sum(ALPHA>0)>0) {break}
   cat("Lambda is set too large (trivial solution)!\n")
@@ -255,6 +266,139 @@ ALPHA=ALPHA+t(ALPHA)
 proc.time() - ptm
 # Denoise expression matrix based on the graph
 G = ALPHA/1
+rownames(G)=colnames(G)=rownames(E)
+G[1:4,1:3]
+
+cat("diagnose...\n")
+#library(S4Vectors)
+Stack <- data.frame(S4Vectors::stack(G))
+#Alpha_Stack$spot <- rep(rownames(SimuAlpha_0.5n),5000)
+head(Stack)
+Stack <- Stack[which(Stack$value>0),]
+Stack$x1 <- C[Stack$row,"X"]
+Stack$y1 <- C[Stack$row,"Y"]
+Stack$x2 <- C[Stack$col,"X"]
+Stack$y2 <- C[Stack$col,"Y"]
+
+
+cellNames= data.frame(t(Stack[,1:2]))
+Stack$pair = sapply(cellNames,function(x){paste0(sort(x)[1],sort(x)[2])})
+## Generate the t_SNE plot
+library(Rtsne)
+#IF = data.frame(IF)
+#rownames(IF)
+#colnames(IF) = paste0(rep("feature",ncol(IF)),c(1:ncol(IF)))
+#IF$id = rownames(IF)
+tsne <- Rtsne(IF)
+rownames(tsne$Y)= rownames(IF)
+colnames(tsne$Y) = c("tsne1","tsne2")
+# You can change the value of perplexity and see how the plot changes
+Stack$tsne11 <- tsne$Y[Stack$row,"tsne1"]
+Stack$tsne12 <- tsne$Y[Stack$row,"tsne2"]
+Stack$tsne21 <- tsne$Y[Stack$col,"tsne1"]
+Stack$tsne22 <- tsne$Y[Stack$col,"tsne2"]
+
+if(um){
+  colnames(IF) = c("umap1","umap2")
+  Stack$umap11 <- IF[Stack$row,"umap1"]
+  Stack$umap12 <- IF[Stack$row,"umap2"]
+  Stack$umap21 <- IF[Stack$col,"umap1"]
+  Stack$umap22 <- IF[Stack$col,"umap2"]
+}else{
+  if (N_PC>0){
+    colnames(IF) = paste0(rep("PC",ncol(IF)),c(1:ncol(IF)))
+    Stack$pc11 <- IF[Stack$row,"PC1"]
+    Stack$pc12 <- IF[Stack$row,"PC2"]
+    Stack$pc21 <- IF[Stack$col,"PC1"]
+    Stack$pc22 <- IF[Stack$col,"PC2"]
+  }
+}
+
+#Stack$celltype1 <- C[Stack$row,"seurat_clusters"]
+#Stack$celltype2 <- C[Stack$col,"seurat_clusters"]
+#head(IF)
+#plot(x=IF[,1],y=IF[,2],xlab="PC1",ylab="PC2")
+
+# get the plot for spatial and tsne##
+
+library(ggplot2)
+if (length(table(Stack$pair)) >5000){
+  Stack_plot =filter(Stack,pair %in% sample(names(table(Stack$pair)),5000))
+}else{
+  Stack_plot =Stack
+}
+
+cat(paste0("The number of edges to plot is:",length(table(Stack_plot$pair)),"\n"))
+cat("Figuring Out...\n")
+p1 =ggplot(Stack_plot,aes(x=x1,y=y1))+
+  geom_line(aes(group=pair,color=value,alpha=value))+
+  xlab("X")+
+  ylab("Y")+
+#  geom_point(size = 0.5)+
+  ggtitle("Spatial")
+#  geom_point(aes(color=celltype1)) +
+#  scale_color_manual(values=c("palevioletred1", "seagreen4", "darkturquoise"))+
+#  theme_bw()
+p2 =ggplot(Stack_plot,aes(x=tsne11,y=tsne12)) + 
+  geom_line(aes(group=pair
+                ,color=value
+                ,alpha=value)
+            #            ,color="azure3"
+  )+
+  xlab("TSNE1")+
+  ylab("TSNE2")+
+  #  geom_point()+
+  #  scale_color_manual(values=c("palevioletred1", "seagreen4", "darkturquoise"))+
+  ggtitle("TSNE")
+
+if (um){
+  p3 =ggplot(Stack_plot,aes(x=umap11,y=umap12)) + 
+    geom_line(aes(group=pair
+                  ,color=value
+                  ,alpha=value)
+              #            ,color="azure3"
+    )+
+    xlab("UMAP1")+
+    ylab("UMAP2")+
+    #    geom_point()+
+    #  scale_color_manual(values=c("palevioletred1", "seagreen4", "darkturquoise"))+
+    ggtitle("UMAP")
+}else{
+  if (N_PC>0){
+    p3 = ggplot(Stack_plot,aes(x=pc11,y=pc12)) + 
+      geom_line(aes(group=pair
+                    ,color=value
+                    ,alpha=value)
+                #            ,color="azure3"
+      )+
+      xlab("PC1")+
+      ylab("PC2")+
+      #    geom_point()+
+      #  scale_color_manual(values=c("palevioletred1", "seagreen4", "darkturquoise"))+
+      ggtitle("PCA")
+  }
+}
+
+library(gridExtra)
+library(grid)
+pdf(paste0(output_path,"/",project_name,"Spot_Similarity.pdf"),
+    width = 11.40,height = 3.76)
+grid.arrange(p1,p2,p3,ncol=3,
+             widths=c(1.5,1.5,1.5),
+             top="Spot Similarity in Detected Graph")
+dev.off()
+
+#ggplot(Stack_plot,aes(x=pc11,y=pc12)) + 
+#  geom_line(aes(group=pair),color="azure3")+
+#  xlab("PC1")+
+#  ylab("PC2")+
+#  geom_point()+
+#  scale_color_manual(values=c("palevioletred1", "seagreen4", "darkturquoise"))+
+#  ggtitle(paste0(project_name,"_PCA connection of Detected Graph"))
+
+#plot(IF[,1],IF[,2])
+
+#par(mfrow=c(1,1))
 W = solve(diag(1, dim(G)[1]) + L_E * (diag(rowSums(G)) - G))
 if (d){
   diag_W=diag(W)
@@ -290,7 +434,7 @@ write.table(round(E_denoised,d=5),
             paste0(output_path,'/',project_name,'_Denoised_matrix.txt'),
             sep='\t',row.names = T,col.names = T,quote=F)
 
-rownames(G)=colnames(G)=rownames(E)
+#rownames(G)=colnames(G)=rownames(E)
 write.table(round(G,d=5),
             paste0(output_path,'/',project_name,'_Detected_graph.txt'),
             sep='\t',row.names = T,col.names = T,quote=F)
@@ -300,4 +444,3 @@ colnames(Y)=paste0("Component",1:dim(Y)[2])
 write.table(round(Y,d=5),
             paste0(output_path,'/',project_name,'_Latent_space.txt'),
             sep='\t',row.names = T,col.names = T,quote=F)
-
