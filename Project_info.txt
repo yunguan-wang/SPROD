@@ -1,0 +1,8 @@
+Input_dir	/project/shared/xiao_wang/projects/MOCCA/data/Real_data_validation_visium/LN/
+out_dir	/project/shared/xiao_wang/projects/MOCCA/data/Real_data_validation_visium/LN
+proj_ID	New
+umap	TRUE
+diag_W	TRUE
+Input_file	CPM.txt Spot_metadata.csv Spot_level_haralick_features.csv
+script_dir	/project/shared/xiao_wang/projects/MOCCA/code/Spatial_denoise
+parameters	3 0.08 250 10 0.4 0.625 0.001
