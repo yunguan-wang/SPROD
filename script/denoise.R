@@ -77,13 +77,12 @@ option_list = list(
 opt = parse_args(OptionParser(option_list=option_list))
 
 #########manual input#######
-#opt$Rratio = 0.1
-#opt$K = 10
-#opt$lambda = 3
-#opt$L_E = 0.625
-#opt$projectID = "BC_trial2"
-#opt$input = "/project/shared/xiao_wang/projects/MOCCA/code/Pseudotime/Project_info_bc2.txt"
-
+opt$Rratio = 0.1
+opt$K = 10
+opt$lambda = 15
+opt$L_E = 0.625
+opt$projectID = "rawIF_trial2"
+opt$input = "/project/shared/xiao_wang/projects/MOCCA/code/Pseudotime/Project_info_bc_trialRawIF.txt"
 ###########  define input  ##############
 cat("Inputting...\n")
 if (!is.na(opt$input)){
@@ -101,11 +100,11 @@ if (!is.na(opt$input)){
   LAMBDA=suppressWarnings(as.numeric(Input$parameters[5])) # regularizer, tunable
   L_E=suppressWarnings(as.numeric(Input$parameters[6])) # regularizer for denoising
   margin=suppressWarnings(as.numeric(Input$parameters[7])) # Margin for bisection search, smaller = slower => accuracy up 
-  um = Input$umap # logic for using umap of IF or not#
-  d = Input$diag_W #diag W, default = False; if TRUE, the diag of non-neighbor =0###
+  if(is.null(Input$umap)){um=FALSE}else{um= Input$umap} # logic for using umap of IF or not#
+  if(is.null(Input$diag_W)){d=FALSE}else{d= Input$diag_W} #diag W, default = False; if TRUE, the diag of non-neighbor =0###
   script_path=paste(Input$script_dir,sep = "") # path to the software folder
   output_path=paste(Input$out_dir,sep = "") # output path
-  project_name=Input$proj_ID # project name, First part of names in the output
+  if(is.null(Input$proj_ID)){project_name=NA}else{project_name= Input$proj_ID}# project name, First part of names in the output
   ###List from input file#####  
   para_list<-list(counts_fn,spot_meta_fn,image_features_fn,N_PC,um,R_ratio,U,K,LAMBDA,L_E,margin,d,script_path,output_path,project_name)
   names(para_list) <- c("counts_fn","spot_meta_fn","image_features_fn","N_PC","umap","R_ratio","U","K","LAMBDA","L_E","margin","diag_W","script_path","output_path","project_name")
@@ -122,14 +121,14 @@ if (!is.na(opt$input)){
   spot_meta_fn <- final_list$spot_meta_fn
   image_features_fn <- final_list$image_features_fn
   N_PC <- final_list$N_PC
-  um = final_list$um # whether use umap of IF#
+  um = final_list$umap # whether use umap of IF#
   R_ratio <- final_list$R_ratio # Spot neighborhood radius ratio, 0-1, radius=R*min(xmax-xmin,ymax-ymin)
   U <- final_list$U # perplexity, Tunable
   K <- final_list$K # latent space dimension, Tunable
   LAMBDA <- final_list$LAMBDA # regularizer, tunable
   L_E <- final_list$L_E # regularizer for denoising
   margin <- final_list$margin # Margin for bisection search, smaller = slower => accuracy up 
-  d = final_list$d #diag W, default = False; if TRUE, the diag of non-neighbor =0###
+  d = final_list$diag_W #diag W, default = False; if TRUE, the diag of non-neighbor =0###
   script_path <- final_list$script_path # path to the software folder
   output_path= final_list$output_path # output path
   project_name= final_list$project_name
@@ -150,6 +149,7 @@ if (!is.na(opt$input)){
   output_path=opt$outputPath # output path
   project_name=opt$projectID
 }
+
 cat(paste("N_PC:",N_PC,"umap",um,"R_ratio:",R_ratio,"U:",U,"K",K,"LAMBDA:",LAMBDA,"L_E",L_E,"margin:",margin,"W_diag",d,"project ID:",project_name))
 cat("\n\n")
 #counts_fn
@@ -225,10 +225,11 @@ if (um){
     IF=prcomp(IF)$x[,1:min(N_PC,dim(IF)[2])]
   }else{
     IF=prcomp(IF)$x[,1:dim(IF)[2]]
+    cat("IF: All PCs are selected!\n")
   }
+  cat("IF: PCA done!\n")
 }
 cat("IF is:\n")
-head(IF)
 # Preprocessing the features with PCA or tSNE, optional
 #cat(paste0("Image feature:",head(IF),"\n"))
 #######  spatial denoise  ################
@@ -384,9 +385,11 @@ library(grid)
 pdf(paste0(output_path,"/",project_name,"Spot_Similarity.pdf"),
     width = 11.40,height = 3.76)
 grid.arrange(p1,p2,p3,ncol=3,
-             widths=c(1.5,1.5,1.5),
-             top="Spot Similarity in Detected Graph")
+    widths=c(1.5,1.5,1.5),
+    top="Spot Similarity in Detected Graph")
 dev.off()
+
+
 
 #ggplot(Stack_plot,aes(x=pc11,y=pc12)) + 
 #  geom_line(aes(group=pair),color="azure3")+
