@@ -1,6 +1,5 @@
 '''
 Process Visium expression data into cell by gene matrix txt file
-Need p3s env, or the imported packages.
 '''
 import pandas as pd
 from scipy.io import mmread
