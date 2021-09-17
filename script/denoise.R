@@ -37,6 +37,9 @@ option_list = list(
   make_option(c("-x","--umap"),action="store_true",dest = "umap",
               default = FALSE,type = "logical",
               help ="# Use UMAP of Image features or NOT. By default set to FALSE, which the PCA is used to transform IF."),
+  make_option(c("-g","--diagnose"),action="store_true",dest = "diagnose",
+              default = FALSE,type = "logical",
+              help ="# Generate diagnostic figures or NOT. By default set to FALSE."),
   make_option(c("-r", "--Rratio"), action="store", 
               default=0.08,type = 'double',
               help="Spot neighborhood radius ratio, 0-1, radius=R*min(xmax-xmin,ymax-ymin)"), 
@@ -272,49 +275,50 @@ G = ALPHA/1
 rownames(G)=colnames(G)=rownames(E)
 G[1:4,1:3]
 ############diagnosing#########
-cat("diagnose...\n")
+if(diagnose){
+  cat("diagnose...\n")
 #library(S4Vectors)
-Stack <- data.frame(S4Vectors::stack(G))
+  Stack <- data.frame(S4Vectors::stack(G))
 #Alpha_Stack$spot <- rep(rownames(SimuAlpha_0.5n),5000)
-head(Stack)
-Stack <- Stack[which(Stack$value>0),]
-Stack$x1 <- C[Stack$row,"X"]
-Stack$y1 <- C[Stack$row,"Y"]
-Stack$x2 <- C[Stack$col,"X"]
-Stack$y2 <- C[Stack$col,"Y"]
+  head(Stack)
+  Stack <- Stack[which(Stack$value>0),]
+  Stack$x1 <- C[Stack$row,"X"]
+  Stack$y1 <- C[Stack$row,"Y"]
+  Stack$x2 <- C[Stack$col,"X"]
+  Stack$y2 <- C[Stack$col,"Y"]
 
 
-cellNames= data.frame(t(Stack[,1:2]))
-Stack$pair = sapply(cellNames,function(x){paste0(sort(x)[1],sort(x)[2])})
+  cellNames= data.frame(t(Stack[,1:2]))
+  Stack$pair = sapply(cellNames,function(x){paste0(sort(x)[1],sort(x)[2])})
 ## Generate the t_SNE plot
-library(Rtsne)
+  library(Rtsne)
 #IF = data.frame(IF)
 #rownames(IF)
 #colnames(IF) = paste0(rep("feature",ncol(IF)),c(1:ncol(IF)))
 #IF$id = rownames(IF)
-tsne <- Rtsne(IF0)
-rownames(tsne$Y)= rownames(IF0)
-colnames(tsne$Y) = c("tsne1","tsne2")
+  tsne <- Rtsne(IF0)
+  rownames(tsne$Y)= rownames(IF0)
+  colnames(tsne$Y) = c("tsne1","tsne2")
 # You can change the value of perplexity and see how the plot changes
-Stack$tsne11 <- tsne$Y[Stack$row,"tsne1"]
-Stack$tsne12 <- tsne$Y[Stack$row,"tsne2"]
-Stack$tsne21 <- tsne$Y[Stack$col,"tsne1"]
-Stack$tsne22 <- tsne$Y[Stack$col,"tsne2"]
+  Stack$tsne11 <- tsne$Y[Stack$row,"tsne1"]
+  Stack$tsne12 <- tsne$Y[Stack$row,"tsne2"]
+  Stack$tsne21 <- tsne$Y[Stack$col,"tsne1"]
+  Stack$tsne22 <- tsne$Y[Stack$col,"tsne2"]
 
-if(um){
-  colnames(IF) = c("umap1","umap2")
-  Stack$umap11 <- IF[Stack$row,"umap1"]
-  Stack$umap12 <- IF[Stack$row,"umap2"]
-  Stack$umap21 <- IF[Stack$col,"umap1"]
-  Stack$umap22 <- IF[Stack$col,"umap2"]
+  if(um){
+    colnames(IF) = c("umap1","umap2")
+    Stack$umap11 <- IF[Stack$row,"umap1"]
+    Stack$umap12 <- IF[Stack$row,"umap2"]
+    Stack$umap21 <- IF[Stack$col,"umap1"]
+    Stack$umap22 <- IF[Stack$col,"umap2"]
   
-  IFpc=prcomp(IF0)$x[,1:2]
-  Stack$pc11 <- IFpc[Stack$row,"PC1"]
-  Stack$pc12 <- IFpc[Stack$row,"PC2"]
-  Stack$pc21 <- IFpc[Stack$col,"PC1"]
-  Stack$pc22 <- IFpc[Stack$col,"PC2"]
+    IFpc=prcomp(IF0)$x[,1:2]
+    Stack$pc11 <- IFpc[Stack$row,"PC1"]
+    Stack$pc12 <- IFpc[Stack$row,"PC2"]
+    Stack$pc21 <- IFpc[Stack$col,"PC1"]
+    Stack$pc22 <- IFpc[Stack$col,"PC2"]
   
-}else{
+  }else{
     colnames(IF) = paste0(rep("PC",ncol(IF)),c(1:ncol(IF)))
     Stack$pc11 <- IF[Stack$row,"PC1"]
     Stack$pc12 <- IF[Stack$row,"PC2"]
@@ -327,9 +331,9 @@ if(um){
     Stack$umap12 <- IFump[Stack$row,"umap2"]
     Stack$umap21 <- IFump[Stack$col,"umap1"]
     Stack$umap22 <- IFump[Stack$col,"umap2"]
-}
+  }
 
-head(Stack)
+  head(Stack)
 #Stack$celltype1 <- C[Stack$row,"seurat_clusters"]
 #Stack$celltype2 <- C[Stack$col,"seurat_clusters"]
 #head(IF)
@@ -337,70 +341,70 @@ head(Stack)
 
 #######Figure out diagnose########
 
-library(ggplot2)
-if (length(table(Stack$pair)) >5000){
-  Stack_plot =filter(Stack,pair %in% sample(names(table(Stack$pair)),5000))
-}else{
-  Stack_plot =Stack
-}
+  library(ggplot2)
+  if (length(table(Stack$pair)) >5000){
+    Stack_plot =filter(Stack,pair %in% sample(names(table(Stack$pair)),5000))
+  }else{
+    Stack_plot =Stack
+  }
 
-cat(paste0("The number of edges to plot is:",length(table(Stack_plot$pair)),"\n"))
-cat("Figuring Out...\n")
-p1 =ggplot(Stack_plot,aes(x=x1,y=y1))+
-  geom_line(aes(group=pair,color=value,alpha=value))+
-  xlab("X")+
-  ylab("Y")+
+  cat(paste0("The number of edges to plot is:",length(table(Stack_plot$pair)),"\n"))
+  cat("Figuring Out...\n")
+  p1 =ggplot(Stack_plot,aes(x=x1,y=y1))+
+    geom_line(aes(group=pair,color=value,alpha=value))+
+    xlab("X")+
+    ylab("Y")+
 #  geom_point(size = 0.5)+
-  ggtitle("Spatial")
+    ggtitle("Spatial")
 #  geom_point(aes(color=celltype1)) +
 #  scale_color_manual(values=c("palevioletred1", "seagreen4", "darkturquoise"))+
 #  theme_bw()
-p2 =ggplot(Stack_plot,aes(x=tsne11,y=tsne12)) + 
-  geom_line(aes(group=pair
-                ,color=value
-                ,alpha=value)
+  p2 =ggplot(Stack_plot,aes(x=tsne11,y=tsne12)) + 
+    geom_line(aes(group=pair
+                  ,color=value
+                  ,alpha=value)
             #            ,color="azure3"
-  )+
-  xlab("TSNE1")+
-  ylab("TSNE2")+
+    )+
+    xlab("TSNE1")+
+    ylab("TSNE2")+
   #  geom_point()+
   #  scale_color_manual(values=c("palevioletred1", "seagreen4", "darkturquoise"))+
-  ggtitle("TSNE")
+    ggtitle("TSNE")
 
-p3 =ggplot(Stack_plot,aes(x=umap11,y=umap12)) + 
-  geom_line(aes(group=pair
-              ,color=value
-              ,alpha=value)
-              #            ,color="azure3"
-  )+
-  xlab("UMAP1")+
-  ylab("UMAP2")+
-  #    geom_point()+
-  #  scale_color_manual(values=c("palevioletred1", "seagreen4", "darkturquoise"))+
-  ggtitle("UMAP")
-
-p4 = ggplot(Stack_plot,aes(x=pc11,y=pc12)) + 
-  geom_line(aes(group=pair
+  p3 =ggplot(Stack_plot,aes(x=umap11,y=umap12)) + 
+    geom_line(aes(group=pair
                 ,color=value
                 ,alpha=value)
               #            ,color="azure3"
-  )+
-  xlab("PC1")+
-  ylab("PC2")+
+    )+
+    xlab("UMAP1")+
+    ylab("UMAP2")+
+  #    geom_point()+
+  #  scale_color_manual(values=c("palevioletred1", "seagreen4", "darkturquoise"))+
+    ggtitle("UMAP")
+
+  p4 = ggplot(Stack_plot,aes(x=pc11,y=pc12)) + 
+    geom_line(aes(group=pair
+                  ,color=value
+                  ,alpha=value)
+              #            ,color="azure3"
+    )+
+    xlab("PC1")+
+    ylab("PC2")+
     #    geom_point()+
     #  scale_color_manual(values=c("palevioletred1", "seagreen4", "darkturquoise"))+
-  ggtitle("PCA")
+    ggtitle("PCA")
 
-library(gridExtra)
-library(grid)
-pdf(paste0(output_path,"/",project_name,"Spot_Similarity.pdf"),
-    width = 10,height = 8)
-grid.arrange(p1,p2,p3,p4,ncol=,nrow=2,
-    widths=c(1.5,1.5),
-    heights=c(1.5,1.5),
-    top=paste0(project_name,"_Spot Similarity in Detected Graph"))
-dev.off()
-
+  library(gridExtra)
+  library(grid)
+  pdf(paste0(output_path,"/",project_name,"Spot_Similarity.pdf"),
+      width = 10,height = 8)
+  grid.arrange(p1,p2,p3,p4,ncol=,nrow=2,
+      widths=c(1.5,1.5),
+      heights=c(1.5,1.5),
+      top=paste0(project_name,"_Spot Similarity in Detected Graph"))
+  dev.off()
+}
 
 #ggplot(Stack_plot,aes(x=pc11,y=pc12)) + 
 #  geom_line(aes(group=pair),color="azure3")+
