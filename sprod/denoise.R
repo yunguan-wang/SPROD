@@ -246,11 +246,6 @@ p_n_n=sapply(1:dim(IF)[1],
              function(n) calculate_spot_dist(n,sigma_n,euc_dist2))
 p_nn_tsne=1-(p_n_n + t(p_n_n))/2
 p_nn_tsne=p_nn_tsne^(dim(IF)[1]/Power_tsne_factor)
-<<<<<<< HEAD:sprod/denoise.R
-# hist(p_nn_tsne)
-=======
-#hist(p_nn_tsne)
->>>>>>> 17ccbbaa96e67d272730dc821a2388d32c71f7e5:script/denoise.R
 
 # Build a graph based on image features and spot closeness
 while (1==1)
