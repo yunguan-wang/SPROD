@@ -7,7 +7,6 @@ requires = [
     "numpy",
     "scipy",
     "scikit-learn",
-    "hdbscan",
     "tables"
 ]
 
