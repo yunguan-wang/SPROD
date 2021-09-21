@@ -27,12 +27,34 @@ pip install .
 ```
 After this, install R >= 4.0.2 and the requred R packages.
 
-## Test your installation
+## Test installation
 We have included a simple testing script `test_examples.sh` to test the environment and installation. It is based on the toy example dataset included in this repo. 
 
 ## Usage
 
 ### Data preparation
+Sprod workflow requires two mandatory files, a `Counts.txt` for gene expression data,
+
+||gene1|gene2|gene3|gene4|gene5|
+|-----|-----|-----|-----|-----|-----|
+|spot1|1.06|2.14|1.36|0.94|1.52|
+|spot2|0.97|2.42|1.43|1.21|1.17|
+|spot3|0.76|2.16|1.07|1.46|1.47|
+|spot4|0.82|2.01|1.25|1.18|2.13|
+|spot5|1.01|2.07|1.27|1.22|2.16|
+
+as well as a `Spot_metadata.csv` for positional information of each sequenced spot. 
+
+||X|Y|Spot_radius|
+|-----|-----|-----|-----|
+|spot1|1|2|0.5|
+|spot2|2|4|0.5|
+|spot3|6|1|0.5|
+|spot4|8|1|0.5|
+|spot5|1|7|0.5|
+
+We have included a `data_preprocessing.py` script in this repo for processing raw data in Visium or Slide-seq V2 format. For data from other sources, please refer to the script and process your data into the supported format.
+
 ### Quick start
 ### Sprod step-by-step
 ### Example applications
