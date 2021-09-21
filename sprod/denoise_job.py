@@ -451,7 +451,7 @@ if __name__ == "__main__":
                 sprod_margin,
                 sprod_umap,
                 sprod_diag,
-                sprod_path.replace('/sprod',''),
+                '/'.join(sprod_path.split('/')[:-1]),
                 os.path.abspath(output_path),
                 patch_name,
             ],
