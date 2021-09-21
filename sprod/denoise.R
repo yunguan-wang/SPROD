@@ -150,6 +150,7 @@ if (!is.na(opt$input)){
   d = opt$diagNeighbor
   script_path=opt$scriptPath # path to the software folder
   output_path=opt$outputPath # output path
+  diagnose=opt$diagnose
   project_name=opt$projectID
 }
 
