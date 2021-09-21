@@ -9,6 +9,7 @@ Spatial expression profiling (SEP) techniques provide gene expression close to o
 
 ## Requirement
 R >= 4.0.2, Rcpp, distances, dplyr.
+
 Python >= 3.7, pandas, scikit-image, numpy, scipy, scikit-learn, tables.
 
 ## Installation
@@ -28,3 +29,9 @@ After this, install R >= 4.0.2 and the requred R packages.
 
 ## Test your installation
 We have included a simple testing script `test_examples.sh` to test the environment and installation. It is based on the toy example dataset included in this repo. 
+
+## Usage
+
+### Data preparation
+### Quick start
+### Sprod step-by-step
