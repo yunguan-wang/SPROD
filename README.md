@@ -35,3 +35,4 @@ We have included a simple testing script `test_examples.sh` to test the environm
 ### Data preparation
 ### Quick start
 ### Sprod step-by-step
+### Example applications
