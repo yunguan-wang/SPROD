@@ -37,6 +37,9 @@ option_list = list(
   make_option(c("-x","--umap"),action="store_true",dest = "umap",
               default = FALSE,type = "logical",
               help ="# Use UMAP of Image features or NOT. By default set to FALSE, which the PCA is used to transform IF."),
+  make_option(c("-g","--diagnose"),action="store_true",dest = "diagnose",
+              default = FALSE,type = "logical",
+              help ="# Generate diagnostic figures or NOT. By default set to FALSE."),
   make_option(c("-r", "--Rratio"), action="store", 
               default=0.08,type = 'double',
               help="Spot neighborhood radius ratio, 0-1, radius=R*min(xmax-xmin,ymax-ymin)"), 
@@ -177,13 +180,13 @@ library(dplyr)
 
 if (Sys.getenv("RSTUDIO") == "1")
 {
-  source(paste(script_path,"/bisection/bisection.R",sep=""))
+  source(paste(script_path,"/sprod/bisection/bisection.R",sep=""))
 }else
 {
-  sourceCpp(paste(script_path,"/bisection/bisection_par.cpp",sep=""))
+  sourceCpp(paste(script_path,"/sprod/bisection/bisection_par.cpp",sep=""))
 }
 
-source(paste(script_path,"/denoise_functions.R",sep=""))
+source(paste(script_path,"/sprod/denoise_functions.R",sep=""))
 
 # (1) in practice, we specify an even stronger sufficient condition
 # regarding the relationship between d(y) and 1-(p_n_n + t(p_n_n))/2
@@ -271,6 +274,7 @@ G = ALPHA/1
 rownames(G)=colnames(G)=rownames(E)
 G[1:4,1:3]
 ############diagnosing#########
+if(diagnose){
 cat("diagnose...\n")
 #library(S4Vectors)
 Stack <- data.frame(S4Vectors::stack(G))
@@ -399,7 +403,7 @@ grid.arrange(p1,p2,p3,p4,ncol=,nrow=2,
     heights=c(1.5,1.5),
     top=paste0(project_name,"_Spot Similarity in Detected Graph"))
 dev.off()
-
+}
 
 #ggplot(Stack_plot,aes(x=pc11,y=pc12)) + 
 #  geom_line(aes(group=pair),color="azure3")+
