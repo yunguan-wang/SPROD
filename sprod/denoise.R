@@ -399,7 +399,7 @@ library(gridExtra)
 library(grid)
 pdf(paste0(output_path,"/",project_name,"Spot_Similarity.pdf"),
     width = 10,height = 8)
-grid.arrange(p1,p2,p3,p4,ncol=,nrow=2,
+grid.arrange(p1,p2,p3,p4,ncol=2,nrow=2,
     widths=c(1.5,1.5),
     heights=c(1.5,1.5),
     top=paste0(project_name,"_Spot Similarity in Detected Graph"))
