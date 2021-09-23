@@ -103,6 +103,7 @@ if (!is.na(opt$input)){
   LAMBDA=suppressWarnings(as.numeric(Input$parameters[5])) # regularizer, tunable
   L_E=suppressWarnings(as.numeric(Input$parameters[6])) # regularizer for denoising
   margin=suppressWarnings(as.numeric(Input$parameters[7])) # Margin for bisection search, smaller = slower => accuracy up 
+  if(is.null(Input$diagnose)){diagnose=FALSE}else{diagnose=Input$diagnose} # logic for exporting dignostic figures or not #
   if(is.null(Input$umap)){um=FALSE}else{um= Input$umap} # logic for using umap of IF or not#
   if(is.null(Input$diag_W)){d=FALSE}else{d= Input$diag_W} #diag W, default = False; if TRUE, the diag of non-neighbor =0###
   script_path=paste(Input$script_dir,sep = "") # path to the software folder
@@ -124,6 +125,7 @@ if (!is.na(opt$input)){
   spot_meta_fn <- final_list$spot_meta_fn
   image_features_fn <- final_list$image_features_fn
   N_PC <- final_list$N_PC
+  diagnose = final_list$diagnose
   um = final_list$umap # whether use umap of IF#
   R_ratio <- final_list$R_ratio # Spot neighborhood radius ratio, 0-1, radius=R*min(xmax-xmin,ymax-ymin)
   U <- final_list$U # perplexity, Tunable
@@ -140,6 +142,7 @@ if (!is.na(opt$input)){
   spot_meta_fn <- opt$Cspot
   image_features_fn <- opt$ImageFeature
   N_PC=opt$numberPC
+  diagnose = opt$diagnose
   um =opt$umap
   R_ratio=opt$Rratio # Spot neighborhood radius ratio, 0-1, radius=R*min(xmax-xmin,ymax-ymin)
   U=opt$U # perplexity, Tunable
@@ -222,8 +225,7 @@ ALPHA[]=1/2*P
 IF=scale(IF,center=TRUE,scale=TRUE)
 IF0=IF #save the raw image features for plots#
 if (um){
-  library(umap)
-  IF=umap(IF)$layout
+  IF=umap::umap(IF)$layout
   cat("IF: UMAP done!\n")
 }else{
   if (N_PC>0) {
@@ -296,7 +298,7 @@ library(Rtsne)
 #rownames(IF)
 #colnames(IF) = paste0(rep("feature",ncol(IF)),c(1:ncol(IF)))
 #IF$id = rownames(IF)
-tsne <- Rtsne(IF0)
+tsne <- Rtsne(IF0,check_duplicates = FALSE)
 rownames(tsne$Y)= rownames(IF0)
 colnames(tsne$Y) = c("tsne1","tsne2")
 # You can change the value of perplexity and see how the plot changes
@@ -325,7 +327,7 @@ if(um){
     Stack$pc21 <- IF[Stack$col,"PC1"]
     Stack$pc22 <- IF[Stack$col,"PC2"]
     
-    IFump=umap(IF0)$layout
+    IFump=umap::umap(IF0)$layout
     colnames(IFump) = c("umap1","umap2")
     Stack$umap11 <- IFump[Stack$row,"umap1"]
     Stack$umap12 <- IFump[Stack$row,"umap2"]
@@ -397,7 +399,7 @@ p4 = ggplot(Stack_plot,aes(x=pc11,y=pc12)) +
 
 library(gridExtra)
 library(grid)
-pdf(paste0(output_path,"/",project_name,"Spot_Similarity.pdf"),
+pdf(paste0(output_path,"/",project_name,"_Spot_Similarity.pdf"),
     width = 10,height = 8)
 grid.arrange(p1,p2,p3,p4,ncol=2,nrow=2,
     widths=c(1.5,1.5),
