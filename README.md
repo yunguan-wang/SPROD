@@ -93,4 +93,4 @@ As shown in the figure, many spots with high CD45 expression were quite low in P
 
 In the next example, we evaluated the gene expression dropout level in common expression data formats including bulk RNA-seq, Single-cell RNA-seq, Visium and Slide-Seq, and applied Sprod denoising on the Slide-Seq data. Sprod improved the quality of Slide-Seq data drastically. 
 
-<img src="https://github.com/yunguan-wang/SPROD/blob/master/img/slideseq_dropout_comp.JPG" height="400" width="600">
+<img src="https://github.com/yunguan-wang/SPROD/blob/master/img/slideseq_dropout_comp.JPG" height="400" width="800">
