@@ -67,11 +67,19 @@ A few important parameters are shown below.
 `--warm_start` or `-ws` : If image features were extracted in a previous run, feature extraction step can be skipped by toggling `-ws`. 
 
 For details on the parameters used in denoising, please call the script with a `-h` tag for usage details. 
-### Sprod workflow in details
-#### Dataset with matching image
-Sprod works best when the spatial dataset contains a matching image. A example of such dataset is from the 10X Genomic Visium platform, where a tissue slide is imaged and then divided into thousands of sequencing spots, each barcoded uniquely so that every spot can be mapped back uniquely to the image. For this type of dataset, Sprod will first extract image features using the `feature_extraction.py` script, which will look at image patches around each spot and extract spot-wise features based on both raw pixel values (intensity features) and on co-occurrence matricies (texture features). The shape of the image patch can be specified using the `--feature_mask_shape` or `-m` keyword.
+### Important details in the Sprod workflow
+#### Feature extraction
+##### Dataset with a matching image
+Sprod works best when the spatial dataset contains a matching image. A example of such dataset is from the 10X Genomic Visium platform, where a tissue slide is imaged and then divided into thousands of sequencing spots, each barcoded uniquely so that every spot can be mapped back uniquely to the image. For this type of dataset, Sprod will extract image features using the `feature_extraction.extract_img_features` function, which will look at image patches around each spot and extract spot-wise features based on both raw pixel values (intensity features) and on co-occurrence matricies (texture features). The shape of the image patch can be specified using the `feature_mask_shape` keyword.
 
+##### Dataset without a matching image
+Sometimes the spatial expression dataset does not have a matching image, such as those from the Slide-Seq platform and a Visium dataset without high-resolution image. In this case, Sprod will apply soft clustering on the spots and use the cluster probabilities as the input features for denoising, which we call pseudo-image features. Spots with similar overall molecular phenotype will have similar features, which is a quality also shared by the features derived from real images. Sprod does this through calling the 
+`pseudo_image_gen.make_pseudo_img` function. Currently, the soft clustering is done using either the dirichlet process clustering (https://cran.r-project.org/web/packages/dirichletprocess/index.html) or the HDBSCAN algorithm (https://github.com/scikit-learn-contrib/hdbscan). 
 
+Note: The HDBSCAN package is not installed by default as we found it causes problems in installation sometimes.
+
+#### Handling very big spatial dataset
+Sprod works well with datasets of thousands of sequencing spots. However, for large datasets with tens of thousands of spots, special operations must be performed so that Sprod can run smoothly. Srpod employs a splitting-stitching scheme to facilitate large dataset processing. Each Slide-seq dataset is randomly (not dependent on spatial location) divided into n (10 by default) equal-sized subsets, and this process is repeated b (10 by default) times. Then, Sprod denoising is performed on each of the n * b subsets and the denoised results are concatenated. Each spot is exactly denoised b times, and the concatenated denoised data from the n sampling batches are averaged so that the randomness resulting from the sub-sampling are averaged out. This is done using the `slideseq_make_patches.subsample_patches` and the `slide_seq_stiching.stiching_subsampled_patches` functions.
 
 ### Example applications
 #### Application on Visium
