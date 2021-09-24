@@ -28,7 +28,7 @@ pip install .
 After this, install R >= 4.0.2 and the requred R packages.
 
 ## Test installation
-We have included a simple testing script `test_examples.sh` to test the environment and installation. It is based on the toy example dataset included in this repo. 
+We have included a simple testing script `test_examples.sh` to test the environment and installation. It is based on the toy example dataset included in this repo. Please note that the example data in this repo is only for the purpose of testing installation.
 
 ## Usage
 
@@ -72,6 +72,8 @@ For details on the parameters used in denoising, please call the script with a `
 ##### Dataset with a matching image
 Sprod works best when the spatial dataset contains a matching image. A example of such dataset is from the 10X Genomic Visium platform, where a tissue slide is imaged and then divided into thousands of sequencing spots, each barcoded uniquely so that every spot can be mapped back uniquely to the image. For this type of dataset, Sprod will extract image features using the `feature_extraction.extract_img_features` function, which will look at image patches around each spot and extract spot-wise features based on both raw pixel values (intensity features) and on co-occurrence matricies (texture features). The shape of the image patch can be specified using the `feature_mask_shape` keyword.
 
+Note: for block mask shape, the `Row` and `Col` columns must be present in the `Spot_metadata.csv` file.
+
 ##### Dataset without a matching image
 Sometimes the spatial expression dataset does not have a matching image, such as those from the Slide-Seq platform and a Visium dataset without high-resolution image. In this case, Sprod will apply soft clustering on the spots and use the cluster probabilities as the input features for denoising, which we call pseudo-image features. Spots with similar overall molecular phenotype will have similar features, which is a quality also shared by the features derived from real images. Sprod does this through calling the 
 `pseudo_image_gen.make_pseudo_img` function. Currently, the soft clustering is done using either the dirichlet process clustering (https://cran.r-project.org/web/packages/dirichletprocess/index.html) or the HDBSCAN algorithm (https://github.com/scikit-learn-contrib/hdbscan). 
@@ -83,4 +85,14 @@ Sprod works well with datasets of thousands of sequencing spots. However, for la
 
 ### Example applications
 #### Application on Visium
-In this example, a public [Visium dataset on ovarian cancer](https://www.10xgenomics.com/resources/datasets/human-ovarian-cancer-whole-transcriptome-analysis-stains-dapi-anti-pan-ck-anti-cd-45-1-standard-1-2-0)  from 10X Genomics is used. As the matching image is a immunofluorescence image with a CD45 channel, it is possible to directly compare the correlation between the CD45 signal with PTPRC expression, which encodes CD45 protein. 
+In this example, a public [Visium dataset on ovarian cancer](https://www.10xgenomics.com/resources/datasets/human-ovarian-cancer-whole-transcriptome-analysis-stains-dapi-anti-pan-ck-anti-cd-45-1-standard-1-2-0)  from 10X Genomics is used. As the matching image is a immunofluorescence image with a CD45 channel, it is possible to directly compare the correlation between the CD45 signal with PTPRC expression, which encodes the CD45 protein. 
+
+<img src="https://github.com/yunguan-wang/SPROD/blob/master/img/visium_raw_scatter.j.JPG" height="400" width="400">
+
+As shown in the figure, many spots with high CD45 expression were quite low in PTPRC, suggesting the presence of noise. We applied Sprod to this dataset and then visualized the overlap between CD45 and PTPRC expression, and the overlap was much better after Sprod denoising.
+
+<img src="https://github.com/yunguan-wang/SPROD/blob/master/img/visium_overlap.JPG" height="400" width="800">
+
+In the next example, we evaluated the gene expression dropout level in common expression data formats including bulk RNA-seq, Single-cell RNA-seq, Visium and Slide-Seq, and applied Sprod denoising on the Slide-Seq data. Sprod improved the quality of Slide-Seq data drastically. 
+
+<img src="https://github.com/yunguan-wang/SPROD/blob/master/img/slideseq_dropout_comp.JPG" height="400" width="800">
