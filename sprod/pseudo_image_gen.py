@@ -189,11 +189,6 @@ if __name__ == '__main__':
     except IndexError:
         algo = 'hdbscan'
 
-    try:
-        input_type = sys.argv[5]
-    except IndexError:
-        input_type = 'slideseq'
-
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
