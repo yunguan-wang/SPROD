@@ -67,5 +67,11 @@ A few important parameters are shown below.
 `--warm_start` or `-ws` : If image features were extracted in a previous run, feature extraction step can be skipped by toggling `-ws`. 
 
 For details on the parameters used in denoising, please call the script with a `-h` tag for usage details. 
-### Sprod step-by-step
+### Sprod workflow in details
+#### Dataset with matching image
+Sprod works best when the spatial dataset contains a matching image. A example of such dataset is from the 10X Genomic Visium platform, where a tissue slide is imaged and then divided into thousands of sequencing spots, each barcoded uniquely so that every spot can be mapped back uniquely to the image. For this type of dataset, Sprod will first extract image features using the `feature_extraction.py` script, which will look at image patches around each spot and extract spot-wise features based on both raw pixel values (intensity features) and on co-occurrence matricies (texture features). The shape of the image patch can be specified using the `--feature_mask_shape` or `-m` keyword.
+
+
+
 ### Example applications
+#### Application on Visium
