@@ -83,3 +83,4 @@ Sprod works well with datasets of thousands of sequencing spots. However, for la
 
 ### Example applications
 #### Application on Visium
+In this example, a public [Visium dataset on ovarian cancer](https://www.10xgenomics.com/resources/datasets/human-ovarian-cancer-whole-transcriptome-analysis-stains-dapi-anti-pan-ck-anti-cd-45-1-standard-1-2-0)  from 10X Genomics is used. As the matching image is a immunofluorescence image with a CD45 channel, it is possible to directly compare the correlation between the CD45 signal with PTPRC expression, which encodes CD45 protein. 
