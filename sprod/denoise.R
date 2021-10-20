@@ -1,26 +1,6 @@
-# R>=4, need distances, Rcpp
+# Rversion>=4, need distances, Rcpp
 
-# Rscript /project/shared/xiao_wang/projects/MOCCA/code/Spatial_denoise/script/denoise_bing.R \
-# -e /project/shared/xiao_wang/projects/MOCCA/code/Spatial_denoise/data/Counts.txt \
-# -c /project/shared/xiao_wang/projects/MOCCA/code/Spatial_denoise/data/Spot_metadata.csv \
-# -f /project/shared/xiao_wang/projects/MOCCA/code/Spatial_denoise/data/Spot_level_haralick_features.csv \
-# -n 3 -x -r 0.08 -u 250 -k 10 -l 0.5 -t 0.625 -m 0.001 -d \
-# -s /project/shared/xiao_wang/projects/MOCCA/code/Spatial_denoise \
-# -o /project/shared/xiao_wang/projects/MOCCA/code/Spatial_denoise/data/ \
-# -p project_ID
-# -i /project/shared/xiao_wang/projects/MOCCA/code/Spatial_denoise/data/Project_info.txt ###input using a txt file. When command input and file input is defined together, the "file input" is priority.### 
-######  read arguments  ################
-
-#args=commandArgs(trailingOnly=TRUE)
-
-#if (Sys.getenv("RSTUDIO") == "1") # for dev purpose
-#{
-#  setwd("/project/shared/xiao_wang/projects/MOCCA/code/Spatial_denoise/data")
-#  args=c("Counts.txt","Spot_metadata.csv",
-#    "Spot_level_haralick_features.csv",5,0.2,1000,5,10,1,0.001,
-#    "/project/shared/xiao_wang/projects/MOCCA/code/Spatial_denoise",
-#    ".",".")  
-#}
+#######  read arguments  ################
 suppressPackageStartupMessages(require(optparse))
 option_list = list(
   make_option(c("-e", "--Exp"), action="store", default=NA, 
@@ -69,112 +49,34 @@ option_list = list(
               help="Output path"),
   make_option(c("-p", "--projectID"), action="store", 
               default=NA, type = 'character',
-              help="# project name, First part of names in the output"),
-  make_option(c("-i","--input"),action="store",
-              default=NA,type='character',
-              help="A .txt file including all parameters- 
-              Input_dir, out_dir, proj_ID, umap, diag_W, Input_file, script_dir, parameters.
-              The order in parameters is: numberPC,R,U,K,lambda,L_E,margin.
-              Please refer to the example: Project_info.txt")
-)
+              help="# project name, First part of names in the output")
+  )
 opt = parse_args(OptionParser(option_list=option_list))
 
-#########manual input#######
-#opt$Rratio = 0.1
-#opt$K = 10
-#opt$lambda = 15
-#opt$L_E = 0.625
-#opt$projectID = "tryIF_trial2"
-#opt$input = "/project/shared/xiao_wang/projects/MOCCA/code/Pseudotime/Project_info_bc_trialRawIF.txt"
 ###########  define input  ##############
 cat("Inputting...\n")
-if (!is.na(opt$input)){
-  Input <- read.table(opt$i, row.names=1,header = F,sep = "\t") ####need check here###
-  Input<- as.list(data.frame(t(Input)))
-  Input$Input_file <-unlist(strsplit(Input$Input_file," "))
-  Input$parameters <-unlist(strsplit(Input$parameters," "))
-  counts_fn <- paste(Input$Input_dir,Input$Input_file[1],sep = "")
-  spot_meta_fn <- paste(Input$Input_dir,Input$Input_file[2],sep = "")
-  image_features_fn <- paste(Input$Input_dir,Input$Input_file[3],sep = "")
-  N_PC=suppressWarnings(as.numeric(Input$parameters[1])) # Number of PCs to use. positive integers. set to -1 to disable, and use the original IF matrix
-  R_ratio=suppressWarnings(as.numeric(Input$parameters[2])) # Spot neighborhood radius ratio, 0-1, radius=R*min(xmax-xmin,ymax-ymin)
-  U=suppressWarnings(as.numeric(Input$parameters[3])) # perplexity, Tunable
-  K=suppressWarnings(as.numeric(Input$parameters[4])) # latent space dimension, Tunable
-  LAMBDA=suppressWarnings(as.numeric(Input$parameters[5])) # regularizer, tunable
-  L_E=suppressWarnings(as.numeric(Input$parameters[6])) # regularizer for denoising
-  margin=suppressWarnings(as.numeric(Input$parameters[7])) # Margin for bisection search, smaller = slower => accuracy up 
-  if(is.null(Input$diagnose)){diagnose=FALSE}else{diagnose=Input$diagnose} # logic for exporting dignostic figures or not #
-  if(is.null(Input$umap)){um=FALSE}else{um= Input$umap} # logic for using umap of IF or not#
-  if(is.null(Input$diag_W)){d=FALSE}else{d= Input$diag_W} #diag W, default = False; if TRUE, the diag of non-neighbor =0###
-  script_path=paste(Input$script_dir,sep = "") # path to the software folder
-  output_path=paste(Input$out_dir,sep = "") # output path
-  if(is.null(Input$proj_ID)){project_name=NA}else{project_name= Input$proj_ID}# project name, First part of names in the output
-  ###List from input file#####  
-  para_list<-list(counts_fn,spot_meta_fn,image_features_fn,N_PC,um,R_ratio,U,K,LAMBDA,L_E,margin,d,script_path,output_path,project_name)
-  names(para_list) <- c("counts_fn","spot_meta_fn","image_features_fn","N_PC","umap","R_ratio","U","K","LAMBDA","L_E","margin","diag_W","script_path","output_path","project_name")
-  ###List from direct input####
-  opt_list<- opt[1:15]
-  names(opt_list) <- c("counts_fn","spot_meta_fn","image_features_fn","N_PC","umap","R_ratio","U","K","LAMBDA","L_E","margin","diag_W","script_path","output_path","project_name")
-  ###final list######
-  final_list <- vector(mode = "list",length = 15)
-  names(final_list) <- names(opt_list)
-  final_list[names(which(!is.na(para_list)))] <- para_list[names(which(!is.na(para_list)))]
-  final_list[names(which(is.na(para_list)))] <- opt_list[names(which(is.na(para_list)))]
-  ###Assign to outside variables####
-  counts_fn <- final_list$counts_fn
-  spot_meta_fn <- final_list$spot_meta_fn
-  image_features_fn <- final_list$image_features_fn
-  N_PC <- final_list$N_PC
-  diagnose = final_list$diagnose
-  um = final_list$umap # whether use umap of IF#
-  R_ratio <- final_list$R_ratio # Spot neighborhood radius ratio, 0-1, radius=R*min(xmax-xmin,ymax-ymin)
-  U <- final_list$U # perplexity, Tunable
-  K <- final_list$K # latent space dimension, Tunable
-  LAMBDA <- final_list$LAMBDA # regularizer, tunable
-  L_E <- final_list$L_E # regularizer for denoising
-  margin <- final_list$margin # Margin for bisection search, smaller = slower => accuracy up 
-  d = final_list$diag_W #diag W, default = False; if TRUE, the diag of non-neighbor =0###
-  script_path <- final_list$script_path # path to the software folder
-  output_path= final_list$output_path # output path
-  project_name= final_list$project_name
-}else{
-  counts_fn <- opt$Exp
-  spot_meta_fn <- opt$Cspot
-  image_features_fn <- opt$ImageFeature
-  N_PC=opt$numberPC
-  diagnose = opt$diagnose
-  um =opt$umap
-  R_ratio=opt$Rratio # Spot neighborhood radius ratio, 0-1, radius=R*min(xmax-xmin,ymax-ymin)
-  U=opt$U # perplexity, Tunable
-  K=opt$K # latent space dimension, Tunable
-  LAMBDA=opt$lambda # regularizer, tunable
-  L_E=opt$L_E # regularizer for denoising
-  margin=opt$margin # Margin for bisection search, smaller = slower => accuracy up 
-  d = opt$diagNeighbor
-  script_path=opt$scriptPath # path to the software folder
-  output_path=opt$outputPath # output path
-  diagnose=opt$diagnose
-  project_name=opt$projectID
-}
+
+counts_fn <- opt$Exp
+spot_meta_fn <- opt$Cspot
+image_features_fn <- opt$ImageFeature
+N_PC=opt$numberPC
+diagnose = opt$diagnose
+um =opt$umap
+R_ratio=opt$Rratio # Spot neighborhood radius ratio, 0-1, radius=R*min(xmax-xmin,ymax-ymin)
+U=opt$U # perplexity, Tunable
+K=opt$K # latent space dimension, Tunable
+LAMBDA=opt$lambda # regularizer, tunable
+L_E=opt$L_E # regularizer for denoising
+margin=opt$margin # Margin for bisection search, smaller = slower => accuracy up 
+d = opt$diagNeighbor
+script_path=opt$scriptPath # path to the software folder
+output_path=opt$outputPath # output path
+diagnose=opt$diagnose
+project_name=opt$projectID
+
 
 cat(paste("N_PC:",N_PC,"umap",um,"R_ratio:",R_ratio,"U:",U,"K",K,"LAMBDA:",LAMBDA,"L_E",L_E,"margin:",margin,"W_diag",d,"project ID:",project_name))
 cat("\n\n")
-#counts_fn
-#####original######
-#counts_fn=args[1] # Expression matrix.
-#spot_meta_fn=args[2] # Spot metadata, contains X, Y coordinates.
-#image_features_fn=args[3] # Extracted image features.
-#N_PC=as.numeric(args[4]) # Number of PCs to use. positive integers. set to -1 to disable, and use the original IF matrix
-#R_ratio=as.numeric(args[5]) # Spot neighborhood radius ratio, 0-1, radius=R*min(xmax-xmin,ymax-ymin)
-#U=as.numeric(args[6]) # perplexity, Tunable
-#K=as.numeric(args[7]) # latent space dimension, Tunable
-#S=as.numeric(args[8]) # graph edge weight upper bound, tunable
-#LAMBDA=as.numeric(args[8]) # regularizer, tunable
-#L_E=as.numeric(args[9]) # regularizer for denoising
-#margin=as.numeric(args[10]) # Margin for bisection search, smaller = slower => accuracy up 
-#script_path=args[11] # path to the software folder
-#output_path=args[12] # output path
-#project_name=args[13] # project name, First part of names in the output
 
 ######  load environment  #############
 
@@ -278,54 +180,49 @@ rownames(G)=colnames(G)=rownames(E)
 G[1:4,1:3]
 ############diagnosing#########
 if(diagnose){
-cat("diagnose...\n")
-#library(S4Vectors)
-Stack <- data.frame(S4Vectors::stack(G))
-#Alpha_Stack$spot <- rep(rownames(SimuAlpha_0.5n),5000)
-head(Stack)
-Stack <- Stack[which(Stack$value>0),]
-Stack$x1 <- C[Stack$row,"X"]
-Stack$y1 <- C[Stack$row,"Y"]
-Stack$x2 <- C[Stack$col,"X"]
-Stack$y2 <- C[Stack$col,"Y"]
-
-
-cellNames= data.frame(t(Stack[,1:2]))
-Stack$pair = sapply(cellNames,function(x){paste0(sort(x)[1],sort(x)[2])})
-## Generate the t_SNE plot
-library(Rtsne)
-#IF = data.frame(IF)
-#rownames(IF)
-#colnames(IF) = paste0(rep("feature",ncol(IF)),c(1:ncol(IF)))
-#IF$id = rownames(IF)
-tsne <- Rtsne(IF0,check_duplicates = FALSE)
-rownames(tsne$Y)= rownames(IF0)
-colnames(tsne$Y) = c("tsne1","tsne2")
-# You can change the value of perplexity and see how the plot changes
-Stack$tsne11 <- tsne$Y[Stack$row,"tsne1"]
-Stack$tsne12 <- tsne$Y[Stack$row,"tsne2"]
-Stack$tsne21 <- tsne$Y[Stack$col,"tsne1"]
-Stack$tsne22 <- tsne$Y[Stack$col,"tsne2"]
-
-if(um){
-  colnames(IF) = c("umap1","umap2")
-  Stack$umap11 <- IF[Stack$row,"umap1"]
-  Stack$umap12 <- IF[Stack$row,"umap2"]
-  Stack$umap21 <- IF[Stack$col,"umap1"]
-  Stack$umap22 <- IF[Stack$col,"umap2"]
+  cat("diagnose...\n")
+  Stack <- data.frame(S4Vectors::stack(G))
+  head(Stack)
+  Stack <- Stack[which(Stack$value>0),]
+  Stack$x1 <- C[Stack$row,"X"]
+  Stack$y1 <- C[Stack$row,"Y"]
+  Stack$x2 <- C[Stack$col,"X"]
+  Stack$y2 <- C[Stack$col,"Y"]
   
-  IFpc=prcomp(IF0)$x[,1:2]
-  Stack$pc11 <- IFpc[Stack$row,"PC1"]
-  Stack$pc12 <- IFpc[Stack$row,"PC2"]
-  Stack$pc21 <- IFpc[Stack$col,"PC1"]
-  Stack$pc22 <- IFpc[Stack$col,"PC2"]
   
-}else{
-    colnames(IF) = paste0(rep("PC",ncol(IF)),c(1:ncol(IF)))
-    Stack$pc11 <- IF[Stack$row,"PC1"]
-    Stack$pc12 <- IF[Stack$row,"PC2"]
-    Stack$pc21 <- IF[Stack$col,"PC1"]
-    Stack$pc22 <- IF[Stack$col,"PC2"]
+  cellNames= data.frame(t(Stack[,1:2]))
+  Stack$pair = sapply(cellNames,function(x){paste0(sort(x)[1],sort(x)[2])})
+  ## Generate the t_SNE plot
+  library(Rtsne)
+
+  tsne <- Rtsne(IF0,check_duplicates = FALSE)
+  rownames(tsne$Y)= rownames(IF0)
+  colnames(tsne$Y) = c("tsne1","tsne2")
+  # You can change the value of perplexity and see how the plot changes
+  Stack$tsne11 <- tsne$Y[Stack$row,"tsne1"]
+  Stack$tsne12 <- tsne$Y[Stack$row,"tsne2"]
+  Stack$tsne21 <- tsne$Y[Stack$col,"tsne1"]
+  Stack$tsne22 <- tsne$Y[Stack$col,"tsne2"]
+  
+  if(um){
+    colnames(IF) = c("umap1","umap2")
+    Stack$umap11 <- IF[Stack$row,"umap1"]
+    Stack$umap12 <- IF[Stack$row,"umap2"]
+    Stack$umap21 <- IF[Stack$col,"umap1"]
+    Stack$umap22 <- IF[Stack$col,"umap2"]
+    
+#    IFpc=prcomp(IF0)$x[,1:2]
+#    Stack$pc11 <- IFpc[Stack$row,"PC1"]
+#    Stack$pc12 <- IFpc[Stack$row,"PC2"]
+#    Stack$pc21 <- IFpc[Stack$col,"PC1"]
+#    Stack$pc22 <- IFpc[Stack$col,"PC2"]
+    
+  }else{
+#    colnames(IF) = paste0(rep("PC",ncol(IF)),c(1:ncol(IF)))
+#    Stack$pc11 <- IF[Stack$row,"PC1"]
+#    Stack$pc12 <- IF[Stack$row,"PC2"]
+#    Stack$pc21 <- IF[Stack$col,"PC1"]
+ #   Stack$pc22 <- IF[Stack$col,"PC2"]
     
     IFump=umap::umap(IF0)$layout
     colnames(IFump) = c("umap1","umap2")
@@ -333,92 +230,66 @@ if(um){
     Stack$umap12 <- IFump[Stack$row,"umap2"]
     Stack$umap21 <- IFump[Stack$col,"umap1"]
     Stack$umap22 <- IFump[Stack$col,"umap2"]
+  }
+  
+  head(Stack)
+
+  #######Figure out diagnose########
+  
+  library(ggplot2)
+  if (length(table(Stack$pair)) >5000){
+    Stack_plot =filter(Stack,pair %in% sample(names(table(Stack$pair)),5000))
+  }else{
+    Stack_plot =Stack
+  }
+  
+  cat(paste0("The number of edges to plot is:",length(table(Stack_plot$pair)),"\n"))
+  cat("Figuring Out...\n")
+  p1 =ggplot(Stack_plot,aes(x=x1,y=y1))+
+    geom_line(aes(group=pair,color=value,alpha=value))+
+    xlab("X")+
+    ylab("Y")+
+    ggtitle("Spatial")
+
+    p2 =ggplot(Stack_plot,aes(x=tsne11,y=tsne12)) + 
+    geom_line(aes(group=pair
+                  ,color=value
+                  ,alpha=value))+
+    xlab("TSNE1")+
+    ylab("TSNE2")+
+    ggtitle("TSNE")
+  
+  p3 =ggplot(Stack_plot,aes(x=umap11,y=umap12)) + 
+    geom_line(aes(group=pair
+                  ,color=value
+                  ,alpha=value))+
+    xlab("UMAP1")+
+    ylab("UMAP2")+
+    ggtitle("UMAP")
+  
+#  p4 = ggplot(Stack_plot,aes(x=pc11,y=pc12)) + 
+#    geom_line(aes(group=pair
+#                  ,color=value
+#                  ,alpha=value))+
+#    xlab("PC1")+
+#    ylab("PC2")+
+#    ggtitle("PCA")
+  
+  library(gridExtra)
+  library(grid)
+  pdf(paste0(output_path,"/",project_name,"_Spot_Similarity.pdf"),
+      width = 12,height = 4)
+#  grid.arrange(p1,p2,p3,p4,ncol=2,nrow=2,
+#               widths=c(1.5,1.5),
+#               heights=c(1.5,1.5),
+#               top=paste0(project_name,"_Spot Similarity in Detected Graph"))
+    grid.arrange(p1,p2,p3,ncol=3,nrow=1,
+                 widths=c(1,1,1),
+                 heights=1,
+                 top=paste0(project_name,"_Spot Similarity in Detected Graph"))
+  dev.off()
 }
 
-head(Stack)
-#Stack$celltype1 <- C[Stack$row,"seurat_clusters"]
-#Stack$celltype2 <- C[Stack$col,"seurat_clusters"]
-#head(IF)
-#plot(x=IF[,1],y=IF[,2],xlab="PC1",ylab="PC2")
-
-#######Figure out diagnose########
-
-library(ggplot2)
-if (length(table(Stack$pair)) >5000){
-  Stack_plot =filter(Stack,pair %in% sample(names(table(Stack$pair)),5000))
-}else{
-  Stack_plot =Stack
-}
-
-cat(paste0("The number of edges to plot is:",length(table(Stack_plot$pair)),"\n"))
-cat("Figuring Out...\n")
-p1 =ggplot(Stack_plot,aes(x=x1,y=y1))+
-  geom_line(aes(group=pair,color=value,alpha=value))+
-  xlab("X")+
-  ylab("Y")+
-#  geom_point(size = 0.5)+
-  ggtitle("Spatial")
-#  geom_point(aes(color=celltype1)) +
-#  scale_color_manual(values=c("palevioletred1", "seagreen4", "darkturquoise"))+
-#  theme_bw()
-p2 =ggplot(Stack_plot,aes(x=tsne11,y=tsne12)) + 
-  geom_line(aes(group=pair
-                ,color=value
-                ,alpha=value)
-            #            ,color="azure3"
-  )+
-  xlab("TSNE1")+
-  ylab("TSNE2")+
-  #  geom_point()+
-  #  scale_color_manual(values=c("palevioletred1", "seagreen4", "darkturquoise"))+
-  ggtitle("TSNE")
-
-p3 =ggplot(Stack_plot,aes(x=umap11,y=umap12)) + 
-  geom_line(aes(group=pair
-              ,color=value
-              ,alpha=value)
-              #            ,color="azure3"
-  )+
-  xlab("UMAP1")+
-  ylab("UMAP2")+
-  #    geom_point()+
-  #  scale_color_manual(values=c("palevioletred1", "seagreen4", "darkturquoise"))+
-  ggtitle("UMAP")
-
-p4 = ggplot(Stack_plot,aes(x=pc11,y=pc12)) + 
-  geom_line(aes(group=pair
-                ,color=value
-                ,alpha=value)
-              #            ,color="azure3"
-  )+
-  xlab("PC1")+
-  ylab("PC2")+
-    #    geom_point()+
-    #  scale_color_manual(values=c("palevioletred1", "seagreen4", "darkturquoise"))+
-  ggtitle("PCA")
-
-library(gridExtra)
-library(grid)
-pdf(paste0(output_path,"/",project_name,"_Spot_Similarity.pdf"),
-    width = 10,height = 8)
-grid.arrange(p1,p2,p3,p4,ncol=2,nrow=2,
-    widths=c(1.5,1.5),
-    heights=c(1.5,1.5),
-    top=paste0(project_name,"_Spot Similarity in Detected Graph"))
-dev.off()
-}
-
-#ggplot(Stack_plot,aes(x=pc11,y=pc12)) + 
-#  geom_line(aes(group=pair),color="azure3")+
-#  xlab("PC1")+
-#  ylab("PC2")+
-#  geom_point()+
-#  scale_color_manual(values=c("palevioletred1", "seagreen4", "darkturquoise"))+
-#  ggtitle(paste0(project_name,"_PCA connection of Detected Graph"))
-
-#plot(IF[,1],IF[,2])
-
-#par(mfrow=c(1,1))
 W = solve(diag(1, dim(G)[1]) + L_E * (diag(rowSums(G)) - G))
 if (d){
   diag_W=diag(W)
@@ -427,7 +298,7 @@ if (d){
   W=W/rowSums(W)
   cat("d is TRUE!\n")
 }
-#cat(paste0("d is ",d,"\n"))
+
 E_denoised =  W %*% E
 
 # retrieve the embedding space
@@ -454,7 +325,6 @@ write.table(round(E_denoised,d=5),
             paste0(output_path,'/',project_name,'_Denoised_matrix.txt'),
             sep='\t',row.names = T,col.names = T,quote=F)
 
-#rownames(G)=colnames(G)=rownames(E)
 write.table(round(G,d=5),
             paste0(output_path,'/',project_name,'_Detected_graph.txt'),
             sep='\t',row.names = T,col.names = T,quote=F)
