@@ -103,7 +103,7 @@ def make_pseudo_img(
         spot_meta = spot_meta.loc[cts_hvg.index]
 
 
-        # Dimention reduction using UMAP on top 25 PCs. 5 Umap components are used.
+        # Dimention reduction using UMAP on top 25 PCs. 15 Umap components are used.
         # Todo: Evaluate if these works well in practice. A smaller number of PCs will tend to capture more distinct clusters.
         clustering_data = UMAP(
             n_neighbors = 15,n_components=5, min_dist=0.1,spread=1,random_state=0
@@ -194,4 +194,4 @@ if __name__ == '__main__':
 
     # Dimension reduction, can be skipped if it is already done.
     print("Processing {}".format(cts_fn[:-10]))
-    make_pseudo_img(cts_fn, spot_metadata_fn, output_path, algo, input_type)
+    make_pseudo_img(cts_fn, spot_metadata_fn, output_path, algo)
