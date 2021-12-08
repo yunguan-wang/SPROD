@@ -25,10 +25,12 @@ git clone [repo_path]
 cd [path/to/env]
 pip install .
 ```
-After this, install R >= 4.0.2 and the requred R packages.
+After this, install R >= 4.0.2 and the requred R packages. 
+
+The total installation time is around 10 mintunes. 
 
 ## Test installation
-We have included a simple testing script `test_examples.py` to test the environment and installation. It is based on the toy example dataset included in this repo. Please note that the example data in this repo is only for the purpose of testing installation.
+We have included a simple testing script `test_examples.py` to test the environment and installation. It is based on the toy example dataset included in this repo. Please note that the example data in this repo is only for the purpose of testing installation. The test include the single and patches mode and should conclude in a few minutes.
 
 ## Usage
 
