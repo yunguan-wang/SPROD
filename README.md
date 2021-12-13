@@ -1,8 +1,8 @@
-# SPROD
-SPROD: De-noising of Spatial Expression Profiling Data Based on Latent Graph Learning of in situ Position and Image Data
+# Sprod
+Sprod: De-noising Spatial Transcriptomics Data Based on Position and Image Information
 
 ## Introduction
-Spatial expression profiling (SEP) techniques provide gene expression close to or even superior to single cell resolution, while retaining the physical locations of sequencing and sometimes also provide matched pathological images. However, the expression data captured by spatial sequencing techniques suffer from severe inaccuracies, including but not limited to drop-outs as in regular single cell RNA-sequencing (scRNA-seq) data. To reduce the level of noise in the data, we developped the SPROD tool, which incorporated image information and spot positional information and used latent graph modeling to correct the gene expression data of each spot based on its neighboring spots.
+Spatial Transcriptomics (ST) techniques provide gene expression close to or even superior to single cell resolution, while retaining the physical locations of sequencing and sometimes also provide matched pathological images. However, the expression data captured by ST techniques suffer from severe inaccuracies, including but not limited to drop-outs as in regular single cell RNA-sequencing (scRNA-seq) data. To reduce the level of noise in the data, we developped the Sprod tool, which incorporated image information and spot/bead positional information and used latent graph modeling to correct the gene expression data of each spot/bead.
 
 ## Graphical abstract
 <img src="https://github.com/yunguan-wang/SPROD/blob/master/img/model.png" height="500" width="500">
@@ -30,7 +30,7 @@ After this, install R >= 4.0.2 and the requred R packages.
 The total installation time is around 10 mintunes. 
 
 ## Test installation
-We have included a simple testing script `test_examples.py` to test the environment and installation. It is based on the toy example dataset included in this repo. Please note that the example data in this repo is only for the purpose of testing installation. The test include the single and patches mode and should conclude in a few minutes.
+We have included a simple testing script `test_examples.py` to test the environment and installation. It is based on the toy example dataset included in this repo. Please note that the example data in this repo is only for the purpose of testing installation. The test includes the single and patches mode and should conclude in a few minutes.
 
 ## Usage
 
@@ -58,13 +58,13 @@ as well as a `Spot_metadata.csv` for positional information of each sequenced sp
 We have included a `data_preprocessing.py` script in this repo for processing raw data in Visium or Slide-seq V2 format. For data from other sources, please refer to the script and process your data into the supported format.
 
 ### Quick start
-Once the input data has been processed into the supported format, the full sprod work flow can be ran by calling the `denoise_job.py` script.
+Once the input data has been processed into the supported format, the full sprod work flow can be run by calling the `denoise_job.py` script.
 ```
 python [path/to/denoise_job.py] [path/to/input_folder] [path/to/output_folder]
 ```
 A few important parameters are shown below.
 
-`--type` or `-y` : For small data set, this should be set to `single`, while for larger datasets, this can be set to `patches` to let Sprod ran on subsampled patches in parallell.
+`--type` or `-y` : For small datasets, this should be set to `single`, while for larger datasets, this can be set to `patches` to let Sprod run on subsampled patches in parallell.
 
 `--warm_start` or `-ws` : If image features were extracted in a previous run, feature extraction step can be skipped by toggling `-ws`. 
 
@@ -72,28 +72,29 @@ For details on the parameters used in denoising, please call the script with a `
 ### Important details in the Sprod workflow
 #### Feature extraction
 ##### Dataset with a matching image
-Sprod works best when the spatial dataset contains a matching image. A example of such dataset is from the 10X Genomic Visium platform, where a tissue slide is imaged and then divided into thousands of sequencing spots, each barcoded uniquely so that every spot can be mapped back uniquely to the image. For this type of dataset, Sprod will extract image features using the `feature_extraction.extract_img_features` function, which will look at image patches around each spot and extract spot-wise features based on both raw pixel values (intensity features) and on co-occurrence matricies (texture features). The shape of the image patch can be specified using the `feature_mask_shape` keyword.
+Sprod works best when the spatial dataset contains a matching image (such as 10X Visium). For this type of datasets, Sprod will extract image features using the `feature_extraction.extract_img_features` function, which will look at image patches around each spot and extract intensity and texture features. The shape of the image patch can be specified using the `feature_mask_shape` parameter.
 
 Note: for block mask shape, the `Row` and `Col` columns must be present in the `Spot_metadata.csv` file.
 
 ##### Dataset without a matching image
-Sometimes the spatial expression dataset does not have a matching image, such as those from the Slide-Seq platform and a Visium dataset without high-resolution image. In this case, Sprod will apply soft clustering on the spots and use the cluster probabilities as the input features for denoising, which we call pseudo-image features. Spots with similar overall molecular phenotype will have similar features, which is a quality also shared by the features derived from real images. Sprod does this through calling the 
-`pseudo_image_gen.make_pseudo_img` function. Currently, the soft clustering is done using the dirichlet process clustering (https://cran.r-project.org/web/packages/dirichletprocess/index.html)
-
+Sometimes the ST dataset does not have a matching image, such as those from the Slide-Seq platform and a Visium dataset without high-resolution image. In this case, Sprod will apply soft clustering on the spots based on gene expression and will use the cluster identities/probabilities as the input features for denoising, which we call pseudo-image features. Sprod does this through calling the 
+`pseudo_image_gen.make_pseudo_img` function.
 
 #### Handling very big spatial dataset
-Sprod works well with datasets of thousands of sequencing spots. However, for large datasets with tens of thousands of spots, special operations must be performed so that Sprod can run smoothly. Srpod employs a splitting-stitching scheme to facilitate large dataset processing. Each Slide-seq dataset is randomly (not dependent on spatial location) divided into n (10 by default) equal-sized subsets, and this process is repeated b (10 by default) times. Then, Sprod denoising is performed on each of the n * b subsets and the denoised results are concatenated. Each spot is exactly denoised b times, and the concatenated denoised data from the n sampling batches are averaged so that the randomness resulting from the sub-sampling are averaged out. This is done using the `slideseq_make_patches.subsample_patches` and the `slide_seq_stiching.stiching_subsampled_patches` functions.
+Sprod works well with datasets of thousands of sequencing spots/beads. However, for large datasets with tens of thousands of spots/beads, special operations must be performed so that Sprod can run smoothly. Srpod employs a splitting-stitching scheme to facilitate large dataset processing. Each Slide-seq dataset is randomly (not dependent on spatial location) divided into n (10 by default) equal-sized subsets, and this process is repeated b (10 by default) times. Then, Sprod denoising is performed on each of the n * b subsets and the denoised results are concatenated. Each spot is exactly denoised b times, and the concatenated denoised data from the n sampling batches are averaged so that the randomness resulting from the sub-sampling procedure is averaged out. 
 
 ### Example applications
 #### Application on Visium
-In this example, a public [Visium dataset on ovarian cancer](https://www.10xgenomics.com/resources/datasets/human-ovarian-cancer-whole-transcriptome-analysis-stains-dapi-anti-pan-ck-anti-cd-45-1-standard-1-2-0)  from 10X Genomics is used. As the matching image is a immunofluorescence image with a CD45 channel, it is possible to directly compare the correlation between the CD45 signal with PTPRC expression, which encodes the CD45 protein. 
+Expression drop-outs are one important source of the noises that we tackle. We evaluated the gene expression dropout levels of data from bulk RNA-seq, Single-cell RNA-seq, Visium and Slide-Seq, and the Sprod-denoised Slide-Seq data. Sprod improved the quality of Slide-Seq data drastically, in terms of drop-outs. 
+
+<img src="https://github.com/yunguan-wang/SPROD/blob/master/img/slideseq_dropout_comp.JPG" height="400" width="800">
+
+In this following example (shown in our paper as well), a public [Visium dataset on ovarian cancer](https://www.10xgenomics.com/resources/datasets/human-ovarian-cancer-whole-transcriptome-analysis-stains-dapi-anti-pan-ck-anti-cd-45-1-standard-1-2-0) from 10X Genomics is used. As the matching image is an immunofluorescence image with a CD45 channel, it is possible to directly compare the correlation between the CD45 signal with raw/denoised PTPRC expression, which encodes the CD45 protein (the CD45 channel wasn't used during Sprod's denoising). 
 
 <img src="https://github.com/yunguan-wang/SPROD/blob/master/img/visium_raw_scatter.j.JPG" height="400" width="400">
 
-As shown in the figure, many spots with high CD45 expression were quite low in PTPRC, suggesting the presence of noise. We applied Sprod to this dataset and then visualized the overlap between CD45 and PTPRC expression, and the overlap was much better after Sprod denoising.
+As shown in the figure, many spots with high CD45 staining were quite low in PTPRC expression, suggesting the presence of noise. We applied Sprod to this dataset and then visualized the overlap between CD45 and raw/denoised PTPRC expression, and the overlap was much better after Sprod denoising.
 
 <img src="https://github.com/yunguan-wang/SPROD/blob/master/img/visium_overlap.JPG" height="400" width="800">
 
-In the next example, we evaluated the gene expression dropout level in common expression data formats including bulk RNA-seq, Single-cell RNA-seq, Visium and Slide-Seq, and applied Sprod denoising on the Slide-Seq data. Sprod improved the quality of Slide-Seq data drastically. 
-
-<img src="https://github.com/yunguan-wang/SPROD/blob/master/img/slideseq_dropout_comp.JPG" height="400" width="800">
+For more information regarding the rationale of our study and the performance/usage of Sprod, please refer to our paper (link pending)
