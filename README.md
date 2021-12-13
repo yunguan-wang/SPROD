@@ -62,6 +62,53 @@ Once the input data has been processed into the supported format, the full sprod
 ```
 python [path/to/denoise_job.py] [path/to/input_folder] [path/to/output_folder]
 ```
+
+#### Parameters
+```
+positional arguments:
+
+  input_path            Input folder containing all necessary files.
+  
+  output_path           Output path
+
+optional arguments:
+  --help, -h            
+                        show this help message and exit.
+  --input_type, -y      
+                        Input image type, select from {'single','patches'}. (default: single)
+  --output_prefix, -p   
+                        Project name, First part of names in the output. (default: sprod)
+  --sprod_npc, -sn      
+                        Number of PCs to use. positive integers. set to -1 to use all PCs, and use the original IF matrix (default: -1)
+  --sprod_umap, -su     
+                        Toggle to use UMAP on top of PCA to represent features. (default: False)
+  --sprod_R, -r         
+                        Spot neighborhood radius ratio, 0-1, radius=R*min(xmax-xmin,ymax-ymin). (default: 0.08)
+  --spord_perplexity, -u
+                        Perplexity, used in Sprod to find the proper Gaussian kernal for distant representation. (default: 250)
+  --sprod_margin, -g    
+                        Margin for bisection search, used in Sprod to find the proper Gaussian kernal. smaller => slower => accurate (default: 0.001)
+  --sprod_latent_dim, -k
+                        Dimension of the latent space used in sprod to represent spots. (default: 10)
+  --sprod_graph_reg, -l
+                        Regularizer for spot graph contructed in sprod. (default: 1)
+  --sprod_weight_reg, -w
+                        regularizer for the weights used to normalize expression matrix. (default: 0.625)
+  --sprod_diag, -d      
+                        Toggle to force graph weights to be diagnoal, useful in reducing over smoothing (default: False)
+  --image_feature_type, -i
+                        Type of feature extracted. combination from {'spot', 'block'} and {'intensity', 'texture'} with '_' as
+                        delimiter. Only relevant if the input dataset contains an matching tif image. (default: spot_intensity)
+  --warm_start, -ws     
+                        Toggle for warm start, meaning the folder will have all necessary files for sprod. (default: False)
+  --num_of_patches, -pn
+                        Number of subsampled patches. Only works when --type is patches. (default: 10)
+  --num_of_batches, -pb
+                        How many times subsampling is ran. Only works when --type is patches. (default: 10)
+  -ci, --img_type
+                        Cold start option {'if', 'he'}. File name for patches spots location file. Only works when --type is single (default: he)
+```
+
 A few important parameters are shown below.
 
 `--type` or `-y` : For small datasets, this should be set to `single`, while for larger datasets, this can be set to `patches` to let Sprod run on subsampled patches in parallell.
