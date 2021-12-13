@@ -72,7 +72,7 @@ For details on the parameters used in denoising, please call the script with a `
 ### Important details in the Sprod workflow
 #### Feature extraction
 ##### Dataset with a matching image
-Sprod works best when the spatial dataset contains a matching image (such as 10X Visium). For this type of datasets, Sprod will extract image features using the `feature_extraction.extract_img_features` function, which will look at image patches around each spot and extract intensity and texture features. The shape of the image patch can be specified using the `feature_mask_shape` parameter.
+Sprod works best when the spatial dataset contains a matching image (such as 10X Visium). For this type of datasets, Sprod will extract image features using the `feature_extraction.extract_img_features` function, which will look at image patches around each spot and extract intensity and texture features. The shape of the image patch can be specified using the `feature_mask_shape` parameter. For Dataset in which sequencing spots, the region of interest can be the exact sequencing spot ('spot'), or a rectangular box surrounding each spot ('block). 
 
 Note: for block mask shape, the `Row` and `Col` columns must be present in the `Spot_metadata.csv` file.
 
