@@ -71,6 +71,23 @@ def cal_norm_dispersion(cts):
 def make_pseudo_img(
     cts_fn, spot_metadata_fn, output_path, algo, 
     dp_script_path = '/home2/s190548/work_xiao/projects/MOCCA/code/Spatial_denoise/script/dirichlet_process_clustering.R'):
+    '''
+    This function will make the pseudo-image features based on soft clustering probabilities.
+    The data is CPM normalized, scaled and transformed into UMAP space and then clustered.
+
+    Parameters
+    ==========
+    cts_fn : str
+        fildname for counts.
+    spot_metadata_fn : str
+        fildname for spot metadata.
+    output_path : str
+        folder to save outputs.
+    algo : str
+        algorithm to use. select from 'hdbscan' and 'dp', which stands for direchlet process.
+    dp_script_path : str, optional
+        path to the direchlet process R script called.
+    '''
     if not os.path.exists(output_path + '/dimention_reduced_data_for_clustering.csv'):
         from umap import UMAP
         # Reads data, and align two matrices.
@@ -136,35 +153,12 @@ def make_pseudo_img(
             )
         soft_clusters = pd.read_csv(output_path + '/dp_cluster_prob.csv', index_col=0).values
 
-    # if input_type == 'visium': 
-    #     # Generating pseudo image for visulizing purpose.
-    #     top3 = np.argsort(soft_clusters.sum(axis=0))[::-1][:3] # Select only the top three clusters.
-    #     soft_clusters_top3 = soft_clusters[:,top3]
-    #     pseudo_img = np.zeros(
-    #         [spot_meta.Row.max() + 1,spot_meta.Col.max() + 1, 3], dtype='uint8')
-    #     pseudo_img_clusters = np.zeros(pseudo_img.shape, dtype='uint8')
-    #     spot_r = spot_meta.Spot_radius[0]
-    #     for i in range(spot_meta.shape[0]):
-    #         row, col = spot_meta.iloc[i][['Row','Col']].astype(int)
-    #         pseudo_img_clusters[row,col,:] = 255 * soft_clusters_top3[i,:]
-    #     # Scale the pseudo image so that each channel range from 0-255
-    #     pseudo_img_clusters = (
-    #         255 * minmax_scale(pseudo_img_clusters.reshape(-1,3)).reshape(pseudo_img.shape)
-    #         ).astype('uint8')
-    #     io.imsave(output_path + '/Pseudo_image_cluster_probabilities.tif',pseudo_img_clusters)
-    # elif input_type == 'slideseq':
-    #     _ = plt.figure(figsize=(10,10))
-    #     sns.scatterplot(
-    #         x = spot_meta['X'], y =  spot_meta['Y'], s=2,
-    #         hue = np.argmax(soft_clusters, axis=1).astype(str))
-    #     plt.savefig(output_path + '/Pseudo_image_cluster_probabilities.pdf')
-    #     plt.close()
-
     # Output soft cluster probabilities as the pseudo image features.
     pd.DataFrame(
         soft_clusters, index = clustering_data.index).to_csv(output_path + '/pseudo_image_features.csv')
     os.remove(output_path + '/dp_cluster_prob.csv')
     os.remove(output_path + '/dimention_reduced_data_for_clustering.csv')
+
     ##########
     # Debug purpose codes, output clusters in UMAP 2D space.
     # _ = plt.figure(figsize=(6,6))
