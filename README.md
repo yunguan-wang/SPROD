@@ -159,8 +159,6 @@ A few additional notes for the parameters:
 
 `--warm_start` or `-ws` : This is helpful if image features were extracted in a previous run and a new run is desired with new parameter sets only for the denoising steps. Sprod will automatically look for the needed files in the input directory. 
 
-For details on the parameters used in denoising, please call the script with a `-h` tag for usage details. 
-
 ## Example applications
 ### Application on Visium
 Expression drop-outs are one important source of the noises that we tackle. We evaluated the gene expression dropout levels of data from bulk RNA-seq, Single-cell RNA-seq, Visium and Slide-Seq, and the Sprod-denoised Slide-Seq data. Sprod improved the quality of Slide-Seq data drastically, in terms of drop-outs. 
