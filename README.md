@@ -62,17 +62,64 @@ Once the input data has been processed into the supported format, the full sprod
 ```
 python [path/to/sprod.py] [path/to/input_folder] [path/to/output_folder]
 ```
-A few important parameters are shown below.
 
-`--type` or `-y` : For small datasets, this should be set to `single`, while for larger datasets, this can be set to `patches` to let Sprod run on subsampled patches in parallell.
+#### Parameters
+```
+positional arguments:
 
-`--warm_start` or `-ws` : If image features were extracted in a previous run, feature extraction step can be skipped by toggling `-ws`. 
+  input_path            Input folder containing all necessary files.
+  
+  output_path           Output path
+
+optional arguments:
+  --help, -h            
+                        show this help message and exit.
+  --input_type, -y      
+                        The input type decides the running mode for sprod, select from {'single','patches'}. (default: single)
+  --output_prefix, -p   
+                        Output prefix used in the output. (default: sprod)
+  --sprod_npc, -sn      
+                        Number of PCs to use, positive integers. -1 to use all PCs from the features.(default: -1)
+  --sprod_umap, -su     
+                        Toggle to use UMAP on top of PCA to represent features. (default: False)
+  --sprod_R, -r         
+                        Spot neighborhood radius ratio, 0-1, radius=R*min(xmax-xmin,ymax-ymin). (default: 0.08)
+  --spord_perplexity, -u
+                        Perplexity, used in Sprod to find the proper Gaussian kernal for distant representation. (default: 250)
+  --sprod_margin, -g    
+                        Margin for bisection search, used in Sprod to find the proper Gaussian kernal. smaller => slower => accurate (default: 0.001)
+  --sprod_latent_dim, -k
+                        Dimension of the latent space used in sprod to represent spots. (default: 10)
+  --sprod_graph_reg, -l
+                        Regularization term for spot graph contructed in sprod. (default: 1)
+  --sprod_weight_reg, -w
+                        Regularization term for the denoising weights. (default: 0.625)
+  --sprod_diag, -d      
+                        Toggle to force graph weights to be diagnoal, useful in reducing over smoothing (default: False)
+  --image_feature_type, -i
+                        Type of feature extracted. combination from {'spot', 'block'} and {'intensity', 'texture'} with '_' as
+                        delimiter. Only relevant if the input dataset contains an matching tif image. (default: spot_intensity)
+  --warm_start, -ws     
+                        Toggle for warm start, which will skip all preprocessing steps including feature extraction and patch-making. (default: False)
+  --num_of_patches, -pn
+                        Number of subsampled patches. Only works when --input_type is patches. (default: 10)
+  --num_of_batches, -pb
+                        How many times subsampling is ran. Only works when --input_type is patches. (default: 10)
+  -ci, --img_type
+                        Input image type. {'he', 'if'}. The 'if' mode is only tested on Visium-assocaited data. (default: he)
+```
+
+A few additional notes for the parameters:
+
+`--type` or `-y` : For small datasets with a few thousands spots, this should be set to `single`, while for larger datasets with tens of thousands of spots, this should be set to `patches` to let Sprod run on subsampled patches in parallell to avoid memory problems.
+
+`--warm_start` or `-ws` : This is helpful if image features were extracted in a previous run and a new run is desired with new parameter sets only for the denoising steps. Sprod will automatically look for the needed files in the input directory. 
 
 For details on the parameters used in denoising, please call the script with a `-h` tag for usage details. 
 ### Important details in the Sprod workflow
 #### Feature extraction
 ##### Dataset with a matching image
-Sprod works best when the spatial dataset contains a matching image (such as 10X Visium). For this type of datasets, Sprod will extract image features using the `feature_extraction.extract_img_features` function, which will look at image patches around each spot and extract intensity and texture features. The shape of the image patch can be specified using the `feature_mask_shape` parameter.
+Sprod works best when the spatial dataset contains a matching image (such as 10X Visium). For this type of datasets, Sprod will extract image features using the `feature_extraction.extract_img_features` function, which will look at image patches around each spot and extract intensity and texture features. The shape of the image patch can be specified using the `feature_mask_shape` parameter. For Dataset in which sequencing spots, the region of interest can be the exact sequencing spot ('spot'), or a rectangular box surrounding each spot ('block). 
 
 Note: for block mask shape, the `Row` and `Col` columns must be present in the `Spot_metadata.csv` file.
 
