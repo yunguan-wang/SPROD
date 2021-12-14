@@ -163,7 +163,7 @@ A few additional notes for the parameters:
 ### Application on Visium
 Expression drop-outs are one important source of the noises that we tackle. We evaluated the gene expression dropout levels of data from bulk RNA-seq, Single-cell RNA-seq, Visium and Slide-Seq, and the Sprod-denoised Slide-Seq data. Sprod improved the quality of Slide-Seq data drastically, in terms of drop-outs. 
 
-<img src="https://github.com/yunguan-wang/SPROD/blob/master/img/slideseq_dropout_comp.JPG" height="300" width="600">
+<img src="https://github.com/yunguan-wang/SPROD/blob/master/img/slideseq_dropout_comp.JPG" height="250" width="600">
 
 In this following example (shown in our paper as well), a public [Visium dataset on ovarian cancer](https://www.10xgenomics.com/resources/datasets/human-ovarian-cancer-whole-transcriptome-analysis-stains-dapi-anti-pan-ck-anti-cd-45-1-standard-1-2-0) from 10X Genomics is used. As the matching image is an immunofluorescence image with a CD45 channel, it is possible to directly compare the correlation between the CD45 signal with raw/denoised PTPRC expression, which encodes the CD45 protein (the CD45 channel wasn't used during Sprod's denoising). 
 
