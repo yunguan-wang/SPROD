@@ -30,9 +30,42 @@ After this, install R >= 4.0.2 and the requred R packages.
 The total installation time is around 10 mintunes. 
 
 ## Test installation
-We have included a simple testing script `test_examples.py` to test the environment and installation. It is based on the toy example dataset included in this repo. Please note that the example data in this repo is only for the purpose of testing installation. The test includes the single and patches mode and should conclude in a few minutes.
+We have included a simple testing script `test_examples.py` to test the environment and installation. It is based on the toy example dataset included in this repo. Please note that the example data in this repo is only for the purpose of testing installation. 
+
+Three tests were included in this testing script covering different use cases. 
+
+`single_with_img` is for use cases where a small dataset with matching tif image is present. The data is processed in one run.
+
+`batch_with_img` is for use cases where a big dataset with matching tif image is present. The data is processed in small subsampled patches.
+
+`single_pseudoimage` is for use cases where matching image is not avalable. Cluster probablities of each spot is used as features for sprod.
+
+After installation, run the following code in and the should conclude in a few minutes.
+
+```
+python [path/to/sprod/]test_examples.py
+```
+If everything goes well, you should see outputs similar to the following:
+```
+Removing previous testing results...Done!
+Testing Sprod in single mode
+Sprod test single mode succeeded!
+...
+Testing Sprod in patches mode
+Sprod test patches mode succeeded!
+...
+Testing Sprod in single, pseudoimage mode
+Sprod test single pseudoimage mode succeeded!
+```
 
 ## Usage
+
+### Quick start
+Once the input data has been processed into the supported format, the full sprod work flow can be run by calling the `sprod.py` script. Sprod will first try to locate a single `.tif` image file in the input path. If one is found, sprod will assume it is the matching image and extract features from the image. If sprod cannot find an image, it will perform soft clustering on the spots and use the clustering probabilities as the input features for the denoising model. 
+
+```
+python [path/to/sprod.py] [path/to/input_folder] [path/to/output_folder]
+```
 
 ### Data preparation
 Sprod workflow requires two mandatory files, a `Counts.txt` for gene expression data,
@@ -55,15 +88,26 @@ as well as a `Spot_metadata.csv` for positional information of each sequenced sp
 |spot4|8|1|0.5|
 |spot5|1|7|0.5|
 
+Mandantory columns: `X`, `Y`, and `Spot_radius` stand for X coordinates, Y coordinates and the radius of each sequencing spot.
+
 We have included a `data_preprocessing.py` script in this repo for processing raw data in Visium or Slide-seq V2 format. For data from other sources, please refer to the script and process your data into the supported format.
 
-### Quick start
-Once the input data has been processed into the supported format, the full sprod work flow can be run by calling the `sprod.py` script.
-```
-python [path/to/sprod.py] [path/to/input_folder] [path/to/output_folder]
-```
+### Feature extraction
+Feature extraction (with matching image) or generation (without matching image) is wrapped up in the `sprod.py` script. The process is summerized briefly in below.
 
-#### Parameters
+#### Dataset with a matching image
+Sprod works best when the spatial dataset contains a matching image (such as 10X Visium). For this type of datasets, Sprod will extract image features using the [extract_img_features](https://github.com/yunguan-wang/SPROD/blob/master/sprod/feature_extraction.py#L29) function, which will look at image patches around each spot and extract intensity and texture features. The shape of the image patch can be specified using the `--feature_mask_shape` parameter. For Dataset in which sequencing spots, the region of interest can be the exact sequencing spot ('spot'), or a rectangular box surrounding each spot ('block). 
+
+Note: for block mask shape, the `Row` and `Col` columns must be present in the `Spot_metadata.csv` file.
+
+#### Dataset without a matching image
+Sometimes the ST dataset does not have a matching image, such as those from the Slide-Seq platform and a Visium dataset without high-resolution image. In this case, Sprod will apply soft clustering on the spots based on gene expression and will use the cluster identities/probabilities as the input features for denoising, which we call pseudo-image features. Sprod does this through calling the [make_pseudo_img](https://github.com/yunguan-wang/SPROD/blob/master/sprod/pseudo_image_gen.py#L71) function.
+
+### Handling very big spatial dataset
+Sprod works well with datasets of thousands of sequencing spots/beads. However, for large datasets with tens of thousands of spots/beads, special operations must be performed so that Sprod can run smoothly. Srpod employs a splitting-stitching scheme to facilitate large dataset processing. Each Slide-seq dataset is randomly (not dependent on spatial location) divided into n (10 by default) equal-sized subsets, and this process is repeated b (10 by default) times. Then, Sprod denoising is performed on each of the n * b subsets and the denoised results are concatenated. Each spot is exactly denoised b times, and the concatenated denoised data from the n sampling batches are averaged so that the randomness resulting from the sub-sampling procedure is averaged out. 
+
+
+### List of Parameters
 ```
 positional arguments:
 
@@ -115,23 +159,8 @@ A few additional notes for the parameters:
 
 `--warm_start` or `-ws` : This is helpful if image features were extracted in a previous run and a new run is desired with new parameter sets only for the denoising steps. Sprod will automatically look for the needed files in the input directory. 
 
-For details on the parameters used in denoising, please call the script with a `-h` tag for usage details. 
-### Important details in the Sprod workflow
-#### Feature extraction
-##### Dataset with a matching image
-Sprod works best when the spatial dataset contains a matching image (such as 10X Visium). For this type of datasets, Sprod will extract image features using the `feature_extraction.extract_img_features` function, which will look at image patches around each spot and extract intensity and texture features. The shape of the image patch can be specified using the `feature_mask_shape` parameter. For Dataset in which sequencing spots, the region of interest can be the exact sequencing spot ('spot'), or a rectangular box surrounding each spot ('block). 
-
-Note: for block mask shape, the `Row` and `Col` columns must be present in the `Spot_metadata.csv` file.
-
-##### Dataset without a matching image
-Sometimes the ST dataset does not have a matching image, such as those from the Slide-Seq platform and a Visium dataset without high-resolution image. In this case, Sprod will apply soft clustering on the spots based on gene expression and will use the cluster identities/probabilities as the input features for denoising, which we call pseudo-image features. Sprod does this through calling the 
-`pseudo_image_gen.make_pseudo_img` function.
-
-#### Handling very big spatial dataset
-Sprod works well with datasets of thousands of sequencing spots/beads. However, for large datasets with tens of thousands of spots/beads, special operations must be performed so that Sprod can run smoothly. Srpod employs a splitting-stitching scheme to facilitate large dataset processing. Each Slide-seq dataset is randomly (not dependent on spatial location) divided into n (10 by default) equal-sized subsets, and this process is repeated b (10 by default) times. Then, Sprod denoising is performed on each of the n * b subsets and the denoised results are concatenated. Each spot is exactly denoised b times, and the concatenated denoised data from the n sampling batches are averaged so that the randomness resulting from the sub-sampling procedure is averaged out. 
-
-### Example applications
-#### Application on Visium
+## Example applications
+### Application on Visium
 Expression drop-outs are one important source of the noises that we tackle. We evaluated the gene expression dropout levels of data from bulk RNA-seq, Single-cell RNA-seq, Visium and Slide-Seq, and the Sprod-denoised Slide-Seq data. Sprod improved the quality of Slide-Seq data drastically, in terms of drop-outs. 
 
 <img src="https://github.com/yunguan-wang/SPROD/blob/master/img/slideseq_dropout_comp.JPG" height="300" width="600">
