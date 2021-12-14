@@ -45,7 +45,18 @@ After installation, run the following code in and the should conclude in a few m
 ```
 python [path/to/sprod/]test_examples.py
 ```
-
+If everything goes well, you should see outputs similar to the following:
+```
+Removing previous testing results...Done!
+Testing Sprod in single mode
+Sprod test single mode succeeded!
+...
+Testing Sprod in patches mode
+Sprod test patches mode succeeded!
+...
+Testing Sprod in single, pseudoimage mode
+Sprod test single pseudoimage mode succeeded!
+```
 
 ## Usage
 
@@ -55,7 +66,6 @@ Once the input data has been processed into the supported format, the full sprod
 ```
 python [path/to/sprod.py] [path/to/input_folder] [path/to/output_folder]
 ```
-## Tutorial
 
 ### Data preparation
 Sprod workflow requires two mandatory files, a `Counts.txt` for gene expression data,
