@@ -58,9 +58,9 @@ as well as a `Spot_metadata.csv` for positional information of each sequenced sp
 We have included a `data_preprocessing.py` script in this repo for processing raw data in Visium or Slide-seq V2 format. For data from other sources, please refer to the script and process your data into the supported format.
 
 ### Quick start
-Once the input data has been processed into the supported format, the full sprod work flow can be run by calling the `denoise_job.py` script.
+Once the input data has been processed into the supported format, the full sprod work flow can be run by calling the `sprod.py` script.
 ```
-python [path/to/denoise_job.py] [path/to/input_folder] [path/to/output_folder]
+python [path/to/sprod.py] [path/to/input_folder] [path/to/output_folder]
 ```
 A few important parameters are shown below.
 
