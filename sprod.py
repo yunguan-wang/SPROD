@@ -15,63 +15,6 @@ R >= 4.0.2
 
 Python dependencies will be handeled automatically by installing the sprod package.
 
-Usage
---------
-positional arguments:
-  input_path            Input folder containing all necessary files.
-  output_path           Output path
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --input_type INPUT_TYPE, -y INPUT_TYPE
-                        Input image type, select from {'single','patches'}.
-                        (default: single)
-  --output_prefix OUTPUT_PREFIX, -p OUTPUT_PREFIX
-                        Project name, First part of names in the output.
-                        (default: sprod)
-  --sprod_npc SPROD_NPC, -sn SPROD_NPC
-                        Number of PCs to use. positive integers. set to -1 to
-                        use all PCs, and use the original IF matrix (default:
-                        -1)
-  --sprod_umap, -su     Toggle to use UMAP on top of PCA to represent
-                        features. (default: False)
-  --sprod_R SPROD_R, -r SPROD_R
-                        Spot neighborhood radius ratio, 0-1,
-                        radius=R*min(xmax-xmin,ymax-ymin). (default: 0.08)
-  --spord_perplexity SPORD_PERPLEXITY, -u SPORD_PERPLEXITY
-                        Perplexity, used in Sprod to find the proper Gaussian
-                        kernal for distant representation. (default: 250)
-  --sprod_margin SPROD_MARGIN, -g SPROD_MARGIN
-                        Margin for bisection search, used in Sprod to find the
-                        proper Gaussian kernal. smaller = slower => accurate u
-                        (default: 0.001)
-  --sprod_latent_dim SPROD_LATENT_DIM, -k SPROD_LATENT_DIM
-                        Dimension of the latent space used in sprod to
-                        represent spots. (default: 10)
-  --sprod_graph_reg SPROD_GRAPH_REG, -l SPROD_GRAPH_REG
-                        Regularizer for spot graph contructed in sprod.
-                        (default: 1)
-  --sprod_weight_reg SPROD_WEIGHT_REG, -w SPROD_WEIGHT_REG
-                        regularizer for the weights used to normalize
-                        expression matrix. (default: 0.625)
-  --sprod_diag, -d      Toggle to force graph weights to be diagnoal, useful
-                        in reducing over smoothing (default: False)
-  --image_feature_type IMAGE_FEATURE_TYPE, -i IMAGE_FEATURE_TYPE
-                        Type of feature extracted. combination from {'spot',
-                        'block'} and {'intensity', 'texture'} (default:
-                        spot_intensity)
-  --warm_start, -ws     Toggle for warm start, meaning the folder will have
-                        all necessary files for sprod. (default: False)
-  --num_of_patches NUM_OF_PATCHES, -pn NUM_OF_PATCHES
-                        Number of subsampled patches. Only works when --type
-                        is patches. (default: 10)
-  --num_of_batches NUM_OF_BATCHES, -pb NUM_OF_BATCHES
-                        How many times subsampling is ran. Only works when
-                        --type is patches. (default: 10)
-  -ci IMG_TYPE, --img_type IMG_TYPE
-                        Cold start option. File name for patches spots
-                        location file. Only works when --type is single
-                        (default: he)
 """
 
 import os
@@ -79,10 +22,10 @@ import sys
 import argparse
 import logging
 from multiprocessing import Pool
-from feature_extraction import extract_img_features
-from pseudo_image_gen import make_pseudo_img
-from slide_seq_stiching import stiching_subsampled_patches
-from slideseq_make_patches import subsample_patches
+from sprod.feature_extraction import extract_img_features
+from sprod.pseudo_image_gen import make_pseudo_img
+from sprod.slide_seq_stiching import stiching_subsampled_patches
+from sprod.slideseq_make_patches import subsample_patches
 import subprocess
 
 
@@ -149,7 +92,9 @@ if __name__ == "__main__":
         "-y",
         default="single",
         type=str,
-        help="Input image type, select from {'single','patches'}.",
+        help="The input type decides the running mode for sprod, select from {'single','patches'}. \
+            For smaller datasets, such as Visium, use 'single' mode. For larger datasets such as \
+            Slide-seq, use 'patches' mode",
     )
 
     parser.add_argument(
@@ -157,22 +102,21 @@ if __name__ == "__main__":
         "-p",
         default="sprod",
         type=str,
-        help="Project name, First part of names in the output.",
+        help="Output prefix used in the output.",
     )
     parser.add_argument(
         "--sprod_npc",
         "-sn",
         type=int,
         default=-1,
-        help="Number of PCs to use. positive integers. \
-            set to -1 to use all PCs, and use the original IF matrix",
+        help="Number of PCs to use, positive integers. -1 to use all PCs from the features.",
     )
     parser.add_argument(
         "--sprod_umap",
         "-su",
         default=False,
         action="store_true",
-        help="Toggle to use UMAP on top of PCA to represent features.",
+        help="Toggle to use UMAP on top of PCA to represent features. ",
     )
     parser.add_argument(
         "--sprod_R",
@@ -210,14 +154,14 @@ if __name__ == "__main__":
         "-l",
         default=1,
         type=float,
-        help="Regularizer for spot graph contructed in sprod.",
+        help="Regularization term for spot graph contructed in sprod.",
     ),
     parser.add_argument(
         "--sprod_weight_reg",
         "-w",
         default=0.625,
         type=float,
-        help="regularizer for the weights used to normalize expression matrix.",
+        help="Regularization term for the denoising weights.",
     )
     parser.add_argument(
         "--sprod_diag",
@@ -234,7 +178,8 @@ if __name__ == "__main__":
         type=str,
         default="spot_intensity",
         help="Type of feature extracted. combination from {'spot', 'block'} and \
-            {'intensity', 'texture'}",
+            {'intensity', 'texture'} with '_' as delimiter. Only relevant if the \
+            input dataset contains an matching tif image.",
     )
 
     parser.add_argument(
@@ -242,8 +187,8 @@ if __name__ == "__main__":
         "-ws",
         default=False,
         action="store_true",
-        help="Toggle for warm start, meaning the folder will have all \
-            necessary files for sprod.",
+        help="Toggle for warm start, which will skip all preprocessing steps \
+            including feature extraction and patch-making.",
     )
 
     parser.add_argument(
@@ -251,7 +196,7 @@ if __name__ == "__main__":
         "-pn",
         type=int,
         default=10,
-        help="Number of subsampled patches. Only works when --type is patches.",
+        help="Number of subsampled patches. Only works when --input_type is patches.",
     )
 
     parser.add_argument(
@@ -259,7 +204,7 @@ if __name__ == "__main__":
         "-pb",
         type=int,
         default=10,
-        help="How many times subsampling is ran. Only works when --type is patches.",
+        help="How many times subsampling is ran. Only works when --input_type is patches.",
     )
 
     parser.add_argument(
@@ -267,8 +212,7 @@ if __name__ == "__main__":
         "--img_type",
         type=str,
         default="he",
-        help="Cold start option. File name for patches spots location file. "
-        + "Only works when --type is single",
+        help="Input image type. {'he', 'if'}. The 'if' mode is only tested on Visium-assocaited data.",
     )
 
     args = parser.parse_args()
@@ -292,7 +236,7 @@ if __name__ == "__main__":
 
     # getting script path for supporting codes.
     sprod_path = os.path.abspath(__file__)
-    sprod_path = "/".join(sprod_path.split("/")[:-1])
+    sprod_path = "/".join(sprod_path.split("/")[:-1]) + '/sprod'
     sprod_script = os.path.join(sprod_path, "denoise.R")
 
     if not os.path.exists(output_path):
@@ -306,7 +250,7 @@ if __name__ == "__main__":
         filename=log_fn,
         format="%(asctime)s,%(levelname)s:::%(message)s",
         datefmt="%H:%M:%S",
-        level="DEBUG",
+        level="INFO",
     )
     # redirects stdout and stderr to logger
     stdout_logger = logging.getLogger("STDOUT")
@@ -344,6 +288,7 @@ if __name__ == "__main__":
             spots_fn = os.path.join(input_path, "Spot_metadata.csv")
             dp_script_path = os.path.join(sprod_path, "dirichlet_process_clustering.R")
             make_pseudo_img(cts_fn, spots_fn, input_path, "dp", dp_script_path)
+            pseudo_img_feature_fn = os.path.join(input_path, 'pseudo_image_features.csv')
         else:
             logging.error(
                 "More than one images are present. Please remove the unwanted ones."
@@ -358,6 +303,9 @@ if __name__ == "__main__":
                 input_path,
                 "{}_level_{}_features.csv".format(*image_feature_type.split("_")),
             )
+            if not os.path.exists(feature_fn):
+                if os.path.exists(pseudo_img_feature_fn):
+                    feature_fn = pseudo_img_feature_fn
             if not os.path.exists(intermediate_path):
                 os.makedirs(intermediate_path)
             subsample_patches(input_path, intermediate_path, feature_fn, pn, pb)
@@ -396,6 +344,10 @@ if __name__ == "__main__":
             input_path,
             "{}_level_{}_features.csv".format(*image_feature_type.split("_")),
         )
+        # always tries to use image derived features, then pseudo images.
+        if not os.path.exists(feature_fn):
+            if os.path.exists(pseudo_img_feature_fn):
+                feature_fn = pseudo_img_feature_fn
         if not (
             os.path.exists(cts_fn)
             == os.path.exists(meta_fn)
