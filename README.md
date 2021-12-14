@@ -30,7 +30,22 @@ After this, install R >= 4.0.2 and the requred R packages.
 The total installation time is around 10 mintunes. 
 
 ## Test installation
-We have included a simple testing script `test_examples.py` to test the environment and installation. It is based on the toy example dataset included in this repo. Please note that the example data in this repo is only for the purpose of testing installation. The test includes the single and patches mode and should conclude in a few minutes.
+We have included a simple testing script `test_examples.py` to test the environment and installation. It is based on the toy example dataset included in this repo. Please note that the example data in this repo is only for the purpose of testing installation. 
+
+Three tests were included in this testing script covering different use cases. 
+
+`single_with_img` is for use cases where a small dataset with matching tif image is present. The data is processed in one run.
+
+`batch_with_img` is for use cases where a big dataset with matching tif image is present. The data is processed in small subsampled patches.
+
+`single_pseudoimage` is for use cases where matching image is not avalable. Cluster probablities of each spot is used as features for sprod.
+
+After installation, run the following code in and the should conclude in a few minutes.
+
+```
+python [path/to/sprod/]test_examples.py
+```
+
 
 ## Usage
 
