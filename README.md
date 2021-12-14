@@ -75,11 +75,11 @@ optional arguments:
   --help, -h            
                         show this help message and exit.
   --input_type, -y      
-                        Input image type, select from {'single','patches'}. (default: single)
+                        The input type decides the running mode for sprod, select from {'single','patches'}. (default: single)
   --output_prefix, -p   
-                        Project name, First part of names in the output. (default: sprod)
+                        Output prefix used in the output. (default: sprod)
   --sprod_npc, -sn      
-                        Number of PCs to use. positive integers. set to -1 to use all PCs, and use the original IF matrix (default: -1)
+                        Number of PCs to use, positive integers. -1 to use all PCs from the features.(default: -1)
   --sprod_umap, -su     
                         Toggle to use UMAP on top of PCA to represent features. (default: False)
   --sprod_R, -r         
@@ -91,25 +91,25 @@ optional arguments:
   --sprod_latent_dim, -k
                         Dimension of the latent space used in sprod to represent spots. (default: 10)
   --sprod_graph_reg, -l
-                        Regularizer for spot graph contructed in sprod. (default: 1)
+                        Regularization term for spot graph contructed in sprod. (default: 1)
   --sprod_weight_reg, -w
-                        regularizer for the weights used to normalize expression matrix. (default: 0.625)
+                        Regularization term for the denoising weights. (default: 0.625)
   --sprod_diag, -d      
                         Toggle to force graph weights to be diagnoal, useful in reducing over smoothing (default: False)
   --image_feature_type, -i
                         Type of feature extracted. combination from {'spot', 'block'} and {'intensity', 'texture'} with '_' as
                         delimiter. Only relevant if the input dataset contains an matching tif image. (default: spot_intensity)
   --warm_start, -ws     
-                        Toggle for warm start, meaning the folder will have all necessary files for sprod. (default: False)
+                        Toggle for warm start, which will skip all preprocessing steps including feature extraction and patch-making. (default: False)
   --num_of_patches, -pn
-                        Number of subsampled patches. Only works when --type is patches. (default: 10)
+                        Number of subsampled patches. Only works when --input_type is patches. (default: 10)
   --num_of_batches, -pb
-                        How many times subsampling is ran. Only works when --type is patches. (default: 10)
+                        How many times subsampling is ran. Only works when --input_type is patches. (default: 10)
   -ci, --img_type
-                        Cold start option {'if', 'he'}. File name for patches spots location file. Only works when --type is single (default: he)
+                        Input image type. {'he', 'if'}. The 'if' mode is only tested on Visium-assocaited data. (default: he)
 ```
 
-A few important parameters are shown below.
+A few additional notes for the parameters:
 
 `--type` or `-y` : For small datasets, this should be set to `single`, while for larger datasets, this can be set to `patches` to let Sprod run on subsampled patches in parallell.
 
