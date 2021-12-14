@@ -27,7 +27,7 @@ pip install .
 ```
 After this, install R >= 4.0.2 and the requred R packages. 
 
-The total installation time is around 10 mintunes. 
+The total installation time is around 10 mintunes. If error occuors please upgrade pip and try again.
 
 ## Test installation
 We have included a simple testing script `test_examples.py` to test the environment and installation. It is based on the toy example dataset included in this repo. Please note that the example data in this repo is only for the purpose of testing installation. 
