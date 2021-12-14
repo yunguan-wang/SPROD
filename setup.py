@@ -11,7 +11,7 @@ requires = [
     "umap-learn"
 ]
 
-DESCRIPTION = "De-noising of Spatial Expression Profiling Data Based on Latent Graph Learning of in situ Position and Image Data"
+DESCRIPTION = "De-noising Spatial Transcriptomics Data Based on Position and Image Information"
 
 setup(
     name="sprod",
