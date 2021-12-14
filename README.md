@@ -111,9 +111,9 @@ optional arguments:
 
 A few additional notes for the parameters:
 
-`--type` or `-y` : For small datasets, this should be set to `single`, while for larger datasets, this can be set to `patches` to let Sprod run on subsampled patches in parallell.
+`--type` or `-y` : For small datasets with a few thousands spots, this should be set to `single`, while for larger datasets with tens of thousands of spots, this should be set to `patches` to let Sprod run on subsampled patches in parallell to avoid memory problems.
 
-`--warm_start` or `-ws` : If image features were extracted in a previous run, feature extraction step can be skipped by toggling `-ws`. 
+`--warm_start` or `-ws` : This is helpful if image features were extracted in a previous run and a new run is desired with new parameter sets only for the denoising steps. Sprod will automatically look for the needed files in the input directory. 
 
 For details on the parameters used in denoising, please call the script with a `-h` tag for usage details. 
 ### Important details in the Sprod workflow
