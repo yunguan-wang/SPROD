@@ -84,7 +84,6 @@ def make_pseudo_img(
         spot_meta = spot_meta.loc[cm_samples]
 
         # Filterout genes expressed in less than 10 spots.
-        # Todo: Evaluate if this cutoff makes sense in practice.
         valid_genes = cts.columns[((cts > 0).sum() >= 10)]
         # CPM normalization
         cts = 1e4 * cts.apply(lambda x: x/x.sum(), axis=1)
@@ -164,7 +163,8 @@ def make_pseudo_img(
     # Output soft cluster probabilities as the pseudo image features.
     pd.DataFrame(
         soft_clusters, index = clustering_data.index).to_csv(output_path + '/pseudo_image_features.csv')
-
+    os.remove(output_path + '/dp_cluster_prob.csv')
+    os.remove(output_path + '/dimention_reduced_data_for_clustering.csv')
     ##########
     # Debug purpose codes, output clusters in UMAP 2D space.
     # _ = plt.figure(figsize=(6,6))

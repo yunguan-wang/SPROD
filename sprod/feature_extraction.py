@@ -71,7 +71,7 @@ def extract_img_features(
         img_meta = pd.read_csv(
             os.path.join(input_path,"Spot_metadata.csv"), index_col=0)
     if img is None:
-        img_tif = [x for x in os.listdir() if "tif" in x][0]
+        img_tif = [x for x in os.listdir(input_path) if "tif" in x][0]
         img_tif = os.path.join(input_path, img_tif)
         if input_type == "if":
             # the indexing is a workaround for the strange Visium if image channels.
