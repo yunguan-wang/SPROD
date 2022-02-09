@@ -25,7 +25,7 @@ git clone [repo_path]
 cd [path/to/sprod]
 pip install .
 ```
-After this, install R >= 4.0.2 and the requred R packages. （）
+After this, install R >= 4.0.2 and the requred R packages. （If you don't already have those in your system.）
 
 The total installation time is around 10 mintunes. If error occuors please upgrade pip and try again.
 
