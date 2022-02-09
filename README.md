@@ -7,11 +7,6 @@ Spatial Transcriptomics (ST) techniques provide gene expression close to or even
 ## Graphical abstract
 <img src="https://github.com/yunguan-wang/SPROD/blob/master/img/model.png" height="500" width="500">
 
-## Requirement
-R >= 4.0.2, Rcpp, distances, dplyr.
-
-Python >= 3.7, pandas, scikit-image, numpy, scipy, scikit-learn, tables.
-
 ## Installation
 We strongly recommend using a python virtual env to manage the installation of this algorithm. To do this simply run:
 
@@ -25,7 +20,9 @@ git clone [repo_path]
 cd [path/to/sprod]
 pip install .
 ```
-After this, install R >= 4.0.2 and the requred R packages. （If you don't already have those in your system.）
+Sprod contains scripts written in R and C++, and thus please make sure you have the following dependencies in your system.
+
+R >= 4.0.2, Rcpp, distances, dplyr.
 
 The total installation time is around 10 mintunes. If error occuors please upgrade pip and try again.
 
