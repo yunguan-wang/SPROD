@@ -22,7 +22,7 @@ Then, download this repo and install it.
 ```
 source [path/to/env]/bin/activate
 git clone [repo_path]
-cd [path/to/env]
+cd [path/to/sprod]
 pip install .
 ```
 After this, install R >= 4.0.2 and the requred R packages. 
