@@ -8,21 +8,20 @@ Spatial Transcriptomics (ST) techniques provide gene expression close to or even
 <img src="https://github.com/yunguan-wang/SPROD/blob/master/img/model.png" height="500" width="500">
 
 ## Installation
-We strongly recommend using a python virtual env to manage the installation of this algorithm. To do this simply run:
+We strongly recommend using conda to manage the installation of all dependencies. To do this simply run:
 
 ```
-python3 -m venv [path/to/env]
+conda create --name sprod
+conda activate sprod
+conda install r-base=4.0 r-rcpp r-rcpparmadillo r-optparse r-distances r-dplyr r-dppackage r-rcppparallel
+conda install python=3.7 pandas scikit-image=0.17 numpy scipy scikit-learn umap-learn
 ```
 Then, download this repo and install it.
 ```
-source [path/to/env]/bin/activate
 git clone [repo_path]
 cd [path/to/sprod]
 pip install .
 ```
-Sprod contains scripts written in R and C++, and thus please make sure you have the following dependencies in your system.
-
-R >= 4.0.2, Rcpp, distances, dplyr.
 
 The total installation time is around 10 mintunes. If error occuors please upgrade pip and try again.
 
