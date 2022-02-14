@@ -28,6 +28,7 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+from umap import UMAP
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import scale
 # from skimage import io
@@ -89,7 +90,6 @@ def make_pseudo_img(
         path to the direchlet process R script called.
     '''
     if not os.path.exists(output_path + '/dimention_reduced_data_for_clustering.csv'):
-        from umap import UMAP
         # Reads data, and align two matrices.
         print('Loading counts data and performing dimension reduction using UMAP.')
         cts = pd.read_csv(cts_fn,sep='\t',index_col=0)
