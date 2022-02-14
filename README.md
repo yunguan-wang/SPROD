@@ -7,27 +7,23 @@ Spatial Transcriptomics (ST) techniques provide gene expression close to or even
 ## Graphical abstract
 <img src="https://github.com/yunguan-wang/SPROD/blob/master/img/model.png" height="500" width="500">
 
-## Requirement
-R >= 4.0.2, Rcpp, distances, dplyr.
-
-Python >= 3.7, pandas, scikit-image, numpy, scipy, scikit-learn, tables.
-
 ## Installation
-We strongly recommend using a python virtual env to manage the installation of this algorithm. To do this simply run:
+We strongly recommend using conda to manage the installation of all dependencies. To do this simply run:
 
 ```
-python3 -m venv [path/to/env]
+conda create --name sprod
+conda activate sprod
+conda install r-base=4.0 r-rcpp r-rcpparmadillo r-optparse r-distances r-dplyr r-dppackage r-rcppparallel
+conda install python=3.7 pandas scikit-image=0.17 numpy scipy scikit-learn umap-learn
 ```
 Then, download this repo and install it.
 ```
-source [path/to/env]/bin/activate
 git clone [repo_path]
-cd [path/to/env]
+cd [path/to/sprod]
 pip install .
 ```
-After this, install R >= 4.0.2 and the requred R packages. 
 
-The total installation time is around 10 mintunes. 
+The total installation time is around 10 mintunes. If error occuors please upgrade pip and try again.
 
 ## Test installation
 We have included a simple testing script `test_examples.py` to test the environment and installation. It is based on the toy example dataset included in this repo. Please note that the example data in this repo is only for the purpose of testing installation. 
@@ -161,9 +157,9 @@ A few additional notes for the parameters:
 
 ## Example applications
 ### Application on Visium
-Expression drop-outs are one important source of the noises that we tackle. We evaluated the gene expression dropout levels of data from bulk RNA-seq, Single-cell RNA-seq, Visium and Slide-Seq, and the Sprod-denoised Slide-Seq data. Sprod improved the quality of Slide-Seq data drastically, in terms of drop-outs. 
+Expression drop-outs are one important source of the noises that we tackle. We evaluated the gene expression dropout levels of data from bulk RNA-seq, Single-cell RNA-seq, Visium and Slide-Seq, and the Sprod-denoised Slide-Seq data. Sprod improved the quality of Slide-Seq data drastically, in terms of drop-outs. The X-axis is the average RNA expression levels of each gene profiled by each technique/dataset, and the Y axis shows the percentages of counts of exactly 0 for each gene.
 
-<img src="https://github.com/yunguan-wang/SPROD/blob/master/img/slideseq_dropout_comp.JPG" height="300" width="600">
+<img src="https://github.com/yunguan-wang/SPROD/blob/master/img/slideseq_dropout_comp.JPG" height="250" width="600">
 
 In this following example (shown in our paper as well), a public [Visium dataset on ovarian cancer](https://www.10xgenomics.com/resources/datasets/human-ovarian-cancer-whole-transcriptome-analysis-stains-dapi-anti-pan-ck-anti-cd-45-1-standard-1-2-0) from 10X Genomics is used. As the matching image is an immunofluorescence image with a CD45 channel, it is possible to directly compare the correlation between the CD45 signal with raw/denoised PTPRC expression, which encodes the CD45 protein (the CD45 channel wasn't used during Sprod's denoising). 
 
