@@ -1,0 +1,21 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: 'SPROD: Spatial expression profiling de-noising'
+message: 'If you use this software, please cite it as below.'
+type: software
+authors:
+  - given-names: Yunguan
+    family-names: Wang
+    email: yunguan.wang@utsouthwestern.edu
+    affiliation: UT Southwestern Medical Center
+  - given-names: Bing
+    family-names: Song
+    email: bing.song@utsouthwestern.edu
+    affiliation: UT Southwestern Medical Center
+    orcid: 'https://orcid.org/0000-0002-9905-410X'
+  - given-names: Tao
+    family-names: Wang
+    email: tao.wang@utsouthwestern.edu
+    affiliation: UT Southwestern Medical Center
