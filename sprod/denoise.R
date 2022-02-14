@@ -1,7 +1,10 @@
-# Rversion>=4, need distances, Rcpp
-
+# Rversion>=4, need distances, Rcpp, Rcpparmadillo, dplyr, optparse
+######  load environment  #############
+library(distances)
+library(Rcpp)
+library(dplyr)
+library(optparse)
 #######  read arguments  ################
-suppressPackageStartupMessages(require(optparse))
 option_list = list(
   make_option(c("-e", "--Exp"), action="store", default=NA, 
               type='character',help="Expression matrix"),
@@ -78,11 +81,6 @@ project_name=opt$projectID
 cat(paste("N_PC:",N_PC,"umap",um,"R_ratio:",R_ratio,"U:",U,"K",K,"LAMBDA:",LAMBDA,"L_E",L_E,"margin:",margin,"W_diag",d,"project ID:",project_name))
 cat("\n\n")
 
-######  load environment  #############
-
-library(distances)
-library(Rcpp)
-library(dplyr)
 
 if (Sys.getenv("RSTUDIO") == "1")
 {
@@ -180,6 +178,12 @@ rownames(G)=colnames(G)=rownames(E)
 G[1:4,1:3]
 ############diagnosing#########
 if(diagnose){
+  # only neededf for diagnose mode
+  library(Rtsne)
+  library(ggplot2)
+  library(gridExtra)
+  library(grid)
+
   cat("diagnose...\n")
   Stack <- data.frame(S4Vectors::stack(G))
   head(Stack)
@@ -189,12 +193,10 @@ if(diagnose){
   Stack$x2 <- C[Stack$col,"X"]
   Stack$y2 <- C[Stack$col,"Y"]
   
-  
   cellNames= data.frame(t(Stack[,1:2]))
   Stack$pair = sapply(cellNames,function(x){paste0(sort(x)[1],sort(x)[2])})
   ## Generate the t_SNE plot
-  library(Rtsne)
-
+  
   tsne <- Rtsne(IF0,check_duplicates = FALSE)
   rownames(tsne$Y)= rownames(IF0)
   colnames(tsne$Y) = c("tsne1","tsne2")
@@ -211,18 +213,18 @@ if(diagnose){
     Stack$umap21 <- IF[Stack$col,"umap1"]
     Stack$umap22 <- IF[Stack$col,"umap2"]
     
-#    IFpc=prcomp(IF0)$x[,1:2]
-#    Stack$pc11 <- IFpc[Stack$row,"PC1"]
-#    Stack$pc12 <- IFpc[Stack$row,"PC2"]
-#    Stack$pc21 <- IFpc[Stack$col,"PC1"]
-#    Stack$pc22 <- IFpc[Stack$col,"PC2"]
+  #    IFpc=prcomp(IF0)$x[,1:2]
+  #    Stack$pc11 <- IFpc[Stack$row,"PC1"]
+  #    Stack$pc12 <- IFpc[Stack$row,"PC2"]
+  #    Stack$pc21 <- IFpc[Stack$col,"PC1"]
+  #    Stack$pc22 <- IFpc[Stack$col,"PC2"]
     
   }else{
-#    colnames(IF) = paste0(rep("PC",ncol(IF)),c(1:ncol(IF)))
-#    Stack$pc11 <- IF[Stack$row,"PC1"]
-#    Stack$pc12 <- IF[Stack$row,"PC2"]
-#    Stack$pc21 <- IF[Stack$col,"PC1"]
- #   Stack$pc22 <- IF[Stack$col,"PC2"]
+  #   colnames(IF) = paste0(rep("PC",ncol(IF)),c(1:ncol(IF)))
+  #   Stack$pc11 <- IF[Stack$row,"PC1"]
+  #   Stack$pc12 <- IF[Stack$row,"PC2"]
+  #   Stack$pc21 <- IF[Stack$col,"PC1"]
+  #   Stack$pc22 <- IF[Stack$col,"PC2"]
     
     IFump=umap::umap(IF0)$layout
     colnames(IFump) = c("umap1","umap2")
@@ -236,7 +238,6 @@ if(diagnose){
 
   #######Figure out diagnose########
   
-  library(ggplot2)
   if (length(table(Stack$pair)) >5000){
     Stack_plot =filter(Stack,pair %in% sample(names(table(Stack$pair)),5000))
   }else{
@@ -267,22 +268,20 @@ if(diagnose){
     ylab("UMAP2")+
     ggtitle("UMAP")
   
-#  p4 = ggplot(Stack_plot,aes(x=pc11,y=pc12)) + 
-#    geom_line(aes(group=pair
-#                  ,color=value
-#                  ,alpha=value))+
-#    xlab("PC1")+
-#    ylab("PC2")+
-#    ggtitle("PCA")
+  #  p4 = ggplot(Stack_plot,aes(x=pc11,y=pc12)) + 
+  #    geom_line(aes(group=pair
+  #                  ,color=value
+  #                  ,alpha=value))+
+  #    xlab("PC1")+
+  #    ylab("PC2")+
+  #    ggtitle("PCA")
   
-  library(gridExtra)
-  library(grid)
   pdf(paste0(output_path,"/",project_name,"_Spot_Similarity.pdf"),
       width = 12,height = 4)
-#  grid.arrange(p1,p2,p3,p4,ncol=2,nrow=2,
-#               widths=c(1.5,1.5),
-#               heights=c(1.5,1.5),
-#               top=paste0(project_name,"_Spot Similarity in Detected Graph"))
+  #  grid.arrange(p1,p2,p3,p4,ncol=2,nrow=2,
+  #               widths=c(1.5,1.5),
+  #               heights=c(1.5,1.5),
+  #               top=paste0(project_name,"_Spot Similarity in Detected Graph"))
     grid.arrange(p1,p2,p3,ncol=3,nrow=1,
                  widths=c(1,1,1),
                  heights=1,
