@@ -13,8 +13,11 @@ We strongly recommend using conda to manage the installation of all dependencies
 ```
 conda create --name sprod
 conda activate sprod
-conda install r-base=4.0 r-rcpp r-rcpparmadillo r-optparse r-distances r-dplyr r-dppackage r-rcppparallel
+conda config --add channels conda-forge
+conda config --add channels r
+conda install r-base=4.0 r-rcpp r-rcpparmadillo r-optparse r-distances r-dplyr r-dppackage r-rcppparallel r-gtools
 conda install python=3.7 pandas scikit-image=0.17 numpy scipy scikit-learn umap-learn
+conda install -c anaconda libgcc
 ```
 Then, download this repo and install it.
 ```
