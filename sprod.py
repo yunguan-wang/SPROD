@@ -9,7 +9,6 @@ column for spot features, or "Row" and "Col" columns for block features.
 Dependency
 ----------
 R >= 4.0.2
-    Rcpp
     distances
     dplyr
 

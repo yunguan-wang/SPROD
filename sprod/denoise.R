@@ -1,7 +1,6 @@
 # Rversion>=4, need distances, Rcpp, Rcpparmadillo, dplyr, optparse
 ######  load environment  #############
 library(distances)
-library(Rcpp)
 library(dplyr)
 library(optparse)
 #######  read arguments  ################
@@ -81,15 +80,7 @@ project_name=opt$projectID
 cat(paste("N_PC:",N_PC,"umap",um,"R_ratio:",R_ratio,"U:",U,"K",K,"LAMBDA:",LAMBDA,"L_E",L_E,"margin:",margin,"W_diag",d,"project ID:",project_name))
 cat("\n\n")
 
-
-if (Sys.getenv("RSTUDIO") == "1")
-{
-  source(paste(script_path,"/sprod/bisection/bisection.R",sep=""))
-}else
-{
-  sourceCpp(paste(script_path,"/sprod/bisection/bisection_par.cpp",sep=""))
-}
-
+source(paste(script_path,"/sprod/bisection/bisection.R",sep=""))
 source(paste(script_path,"/sprod/denoise_functions.R",sep=""))
 
 # (1) in practice, we specify an even stronger sufficient condition
