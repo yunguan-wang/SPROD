@@ -1,6 +1,8 @@
-# Rversion>=4, need distances, Rcpp, Rcpparmadillo, dplyr, optparse
+# Rversion>=4, need distances, dplyr, optparse, 
+# if diag=T, need ggplot2, gridExtra
 ######  load environment  #############
 library(distances)
+#library(Rcpp)
 library(dplyr)
 library(optparse)
 #######  read arguments  ################
@@ -96,8 +98,7 @@ E=as.matrix(read.table(counts_fn,row.names = 1,header = T))
 C=read.csv(spot_meta_fn,row.names = 1,header = T,stringsAsFactors=F)
 R=min(max(C$X)-min(C$X),max(C$Y)-min(C$Y))*R_ratio
 IF=as.matrix(read.csv(image_features_fn,row.names=1,header=T))
-if (any(rownames(E)!=rownames(C)) || any(rownames(E)!=rownames(IF)))
-{stop("Spot IDs mismatch!")}
+if (any(rownames(E)!=rownames(C)) || any(rownames(E)!=rownames(IF))){stop("Spot IDs mismatch!")}
 
 #######  initialization  ###############
 cat("initializing...\n")
@@ -145,8 +146,7 @@ p_nn_tsne=1-(p_n_n + t(p_n_n))/2
 p_nn_tsne=p_nn_tsne^(dim(IF)[1]/Power_tsne_factor)
 
 # Build a graph based on image features and spot closeness
-while (1==1)
-{
+while (1==1){
   ALPHA[]=optim(as.vector(ALPHA),fn=fr,gr=gr,method='L-BFGS-B',
                 lower=0,upper=P*1,data=list(LAMBDA, p_nn_tsne, P , K),
                 control=list(trace=T))$par 
@@ -169,11 +169,8 @@ rownames(G)=colnames(G)=rownames(E)
 G[1:4,1:3]
 ############diagnosing#########
 if(diagnose){
-  # only neededf for diagnose mode
-  library(Rtsne)
+# only needed for diagnose mode
   library(ggplot2)
-  library(gridExtra)
-  library(grid)
 
   cat("diagnose...\n")
   Stack <- data.frame(S4Vectors::stack(G))
@@ -188,10 +185,9 @@ if(diagnose){
   Stack$pair = sapply(cellNames,function(x){paste0(sort(x)[1],sort(x)[2])})
   ## Generate the t_SNE plot
   
-  tsne <- Rtsne(IF0,check_duplicates = FALSE)
+  tsne <- Rtsne::Rtsne(IF0,check_duplicates = FALSE)
   rownames(tsne$Y)= rownames(IF0)
   colnames(tsne$Y) = c("tsne1","tsne2")
-  # You can change the value of perplexity and see how the plot changes
   Stack$tsne11 <- tsne$Y[Stack$row,"tsne1"]
   Stack$tsne12 <- tsne$Y[Stack$row,"tsne2"]
   Stack$tsne21 <- tsne$Y[Stack$col,"tsne1"]
@@ -204,19 +200,8 @@ if(diagnose){
     Stack$umap21 <- IF[Stack$col,"umap1"]
     Stack$umap22 <- IF[Stack$col,"umap2"]
     
-  #    IFpc=prcomp(IF0)$x[,1:2]
-  #    Stack$pc11 <- IFpc[Stack$row,"PC1"]
-  #    Stack$pc12 <- IFpc[Stack$row,"PC2"]
-  #    Stack$pc21 <- IFpc[Stack$col,"PC1"]
-  #    Stack$pc22 <- IFpc[Stack$col,"PC2"]
-    
   }else{
-  #   colnames(IF) = paste0(rep("PC",ncol(IF)),c(1:ncol(IF)))
-  #   Stack$pc11 <- IF[Stack$row,"PC1"]
-  #   Stack$pc12 <- IF[Stack$row,"PC2"]
-  #   Stack$pc21 <- IF[Stack$col,"PC1"]
-  #   Stack$pc22 <- IF[Stack$col,"PC2"]
-    
+ 
     IFump=umap::umap(IF0)$layout
     colnames(IFump) = c("umap1","umap2")
     Stack$umap11 <- IFump[Stack$row,"umap1"]
@@ -243,7 +228,7 @@ if(diagnose){
     ylab("Y")+
     ggtitle("Spatial")
 
-    p2 =ggplot(Stack_plot,aes(x=tsne11,y=tsne12)) + 
+  p2 =ggplot(Stack_plot,aes(x=tsne11,y=tsne12)) + 
     geom_line(aes(group=pair
                   ,color=value
                   ,alpha=value))+
@@ -259,24 +244,11 @@ if(diagnose){
     ylab("UMAP2")+
     ggtitle("UMAP")
   
-  #  p4 = ggplot(Stack_plot,aes(x=pc11,y=pc12)) + 
-  #    geom_line(aes(group=pair
-  #                  ,color=value
-  #                  ,alpha=value))+
-  #    xlab("PC1")+
-  #    ylab("PC2")+
-  #    ggtitle("PCA")
   
   pdf(paste0(output_path,"/",project_name,"_Spot_Similarity.pdf"),
       width = 12,height = 4)
-  #  grid.arrange(p1,p2,p3,p4,ncol=2,nrow=2,
-  #               widths=c(1.5,1.5),
-  #               heights=c(1.5,1.5),
-  #               top=paste0(project_name,"_Spot Similarity in Detected Graph"))
-    grid.arrange(p1,p2,p3,ncol=3,nrow=1,
-                 widths=c(1,1,1),
-                 heights=1,
-                 top=paste0(project_name,"_Spot Similarity in Detected Graph"))
+  gridExtra::grid.arrange(p1,p2,p3,ncol=3,nrow=1,widths=c(1,1,1),heights=1,
+                top=paste0(project_name,"_Spot Similarity in Detected Graph"))
   dev.off()
 }
 
