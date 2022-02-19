@@ -2,7 +2,6 @@
 # if diag=T, need ggplot2, gridExtra
 ######  load environment  #############
 library(distances)
-#library(Rcpp)
 library(dplyr)
 library(optparse)
 #######  read arguments  ################
@@ -82,8 +81,8 @@ project_name=opt$projectID
 cat(paste("N_PC:",N_PC,"umap",um,"R_ratio:",R_ratio,"U:",U,"K",K,"LAMBDA:",LAMBDA,"L_E",L_E,"margin:",margin,"W_diag",d,"project ID:",project_name))
 cat("\n\n")
 
-source(paste(script_path,"/sprod/bisection/bisection.R",sep=""))
-source(paste(script_path,"/sprod/denoise_functions.R",sep=""))
+source(file.path(script_path,"bisection/bisection.R"))
+source(file.path(script_path,"denoise_functions.R"))
 
 # (1) in practice, we specify an even stronger sufficient condition
 # regarding the relationship between d(y) and 1-(p_n_n + t(p_n_n))/2
@@ -171,7 +170,6 @@ G[1:4,1:3]
 if(diagnose){
 # only needed for diagnose mode
   library(ggplot2)
-
   cat("diagnose...\n")
   Stack <- data.frame(S4Vectors::stack(G))
   head(Stack)
@@ -214,41 +212,40 @@ if(diagnose){
 
   #######Figure out diagnose########
   
-  if (length(table(Stack$pair)) >5000){
-    Stack_plot =filter(Stack,pair %in% sample(names(table(Stack$pair)),5000))
-  }else{
-    Stack_plot =Stack
+  if (length(table(Stack$pair)) > 5000) {
+    Stack_plot = filter(Stack, pair %in% sample(names(table(Stack$pair)),5000))
+  } else {
+    Stack_plot = Stack
   }
   
   cat(paste0("The number of edges to plot is:",length(table(Stack_plot$pair)),"\n"))
   cat("Figuring Out...\n")
-  p1 =ggplot(Stack_plot,aes(x=x1,y=y1))+
+  pdf(file.path(output_path, 'Diagnose_Spatial.pdf'))
+  ggplot(Stack_plot,aes(x=x1,y=y1))+
     geom_line(aes(group=pair,color=value,alpha=value))+
     xlab("X")+
     ylab("Y")+
     ggtitle("Spatial")
+  dev.off()
 
-  p2 =ggplot(Stack_plot,aes(x=tsne11,y=tsne12)) + 
+  pdf(file.path(output_path, 'Diagnose_TSNE.pdf'))
+  ggplot(Stack_plot,aes(x=tsne11,y=tsne12)) + 
     geom_line(aes(group=pair
                   ,color=value
                   ,alpha=value))+
     xlab("TSNE1")+
     ylab("TSNE2")+
     ggtitle("TSNE")
-  
-  p3 =ggplot(Stack_plot,aes(x=umap11,y=umap12)) + 
+  dev.off()
+
+  pdf(file.path(output_path, 'Diagnose_UMAP.pdf'))
+  ggplot(Stack_plot,aes(x=umap11,y=umap12)) + 
     geom_line(aes(group=pair
                   ,color=value
                   ,alpha=value))+
     xlab("UMAP1")+
     ylab("UMAP2")+
     ggtitle("UMAP")
-  
-  
-  pdf(paste0(output_path,"/",project_name,"_Spot_Similarity.pdf"),
-      width = 12,height = 4)
-  gridExtra::grid.arrange(p1,p2,p3,ncol=3,nrow=1,widths=c(1,1,1),heights=1,
-                top=paste0(project_name,"_Spot Similarity in Detected Graph"))
   dev.off()
 }
 
@@ -283,16 +280,19 @@ Y=Y[,1:K]
 #########  output  ################
 cat("outputing...\n")
 rownames(E_denoised)=rownames(E)
+E_denoised_fn = paste(project_name,'_Denoised_matrix.txt', sep='')
+G_fn = paste(project_name,'_Detected_graph.txt', sep='')
+Y_fn = paste(project_name,'_Latent_space.txt', sep='')
 write.table(round(E_denoised,d=5),
-            paste0(output_path,'/',project_name,'_Denoised_matrix.txt'),
+            file.path(output_path,E_denoised_fn),
             sep='\t',row.names = T,col.names = T,quote=F)
 
 write.table(round(G,d=5),
-            paste0(output_path,'/',project_name,'_Detected_graph.txt'),
+            file.path(output_path,G_fn),
             sep='\t',row.names = T,col.names = T,quote=F)
 
 rownames(Y)=rownames(E)
 colnames(Y)=paste0("Component",1:dim(Y)[2])
 write.table(round(Y,d=5),
-            paste0(output_path,'/',project_name,'_Latent_space.txt'),
+            file.path(output_path,Y_fn),
             sep='\t',row.names = T,col.names = T,quote=F)
