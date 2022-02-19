@@ -26,6 +26,7 @@ from sprod.pseudo_image_gen import make_pseudo_img
 from sprod.slide_seq_stiching import stiching_subsampled_patches
 from sprod.slideseq_make_patches import subsample_patches
 import subprocess
+import platform
 
 
 def sprod_worker(cmd):
@@ -232,10 +233,11 @@ if __name__ == "__main__":
     image_feature_type = args.image_feature_type
     pn = args.num_of_patches
     pb = args.num_of_batches
+    os_type = platform.system()
 
     # getting script path for supporting codes.
     sprod_path = os.path.abspath(__file__)
-    sprod_path = "/".join(sprod_path.split("/")[:-1]) + '/sprod'
+    sprod_path = sprod_path.replace('sprod.py', 'sprod')
     sprod_script = os.path.join(sprod_path, "denoise.R")
 
     if not os.path.exists(output_path):
@@ -366,7 +368,7 @@ if __name__ == "__main__":
     for sprod_job in inputs:
         cts_fn, meta_fn, feature_fn = [os.path.abspath(x) for x in sprod_job]
         if input_type == "patches":
-            patch_name = cts_fn.split("/")[-1].replace("_Counts.txt", "")
+            patch_name = cts_fn.split(os.sep)[-1].replace("_Counts.txt", "")
         else:
             patch_name = "sprod"
         # Pack all parameters for denoise.R job
@@ -402,7 +404,7 @@ if __name__ == "__main__":
                 sprod_margin,
                 sprod_umap,
                 sprod_diag,
-                '/'.join(sprod_path.split('/')[:-1]),
+                sprod_path,
                 os.path.abspath(output_path),
                 patch_name,
             ],
