@@ -1,9 +1,9 @@
 # Rversion>=4, need distances, dplyr, optparse, 
 # if diag=T, need ggplot2, gridExtra
 ######  load environment  ###########
-library(distances)
-library(dplyr)
-library(optparse)
+suppressPackageStartupMessages(library(distances))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(optparse))
 #######  read arguments  ##############
 option_list = list(
   make_option(c("-e", "--Exp"), action="store", default=NA, 
@@ -76,7 +76,7 @@ diagnose=opt$diagnose
 project_name=opt$projectID
 
 cat(paste("N_PC:",N_PC,"umap",um,"R_ratio:",R_ratio,"U:",U,"K",K,"LAMBDA:",LAMBDA,"L_E",L_E,"margin:",margin,"W_diag",d,"project ID:",project_name))
-cat("\n\n\n\n")
+cat("\n\n")
 
 source(file.path(script_path,"bisection/bisection.R"))
 source(file.path(script_path,"denoise_functions.R"))
@@ -154,7 +154,7 @@ while (1==1) {
   cat(paste("Resetting to",LAMBDA,"\n\n"))
 }
 
-cat("Number of non-zero edges: \n\n"))
+cat("Number of non-zero edges: \n")
 table(ALPHA>0)
 
 if (sum(ALPHA>0)/sum(P==T)>0.9) {warning("Lambda may be set too small!")}
