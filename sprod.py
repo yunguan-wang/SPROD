@@ -369,7 +369,7 @@ if __name__ == "__main__":
         if input_type == "patches":
             patch_name = cts_fn.split("/")[-1].replace("_Counts.txt", "")
         else:
-            patch_name = "sprod"
+            patch_name = output_prefix
         # Pack all parameters for denoise.R job
         sprod_cmd = ["Rscript", sprod_script]
         for sprod_key, param in zip(
