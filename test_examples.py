@@ -75,6 +75,6 @@ try:
         print('Sprod test single pseudoimage mode was able to run, but the results were not expected. Please check if the input files match those in the repo.')
 except FileNotFoundError:
     print('Sprod denoise job failed: no output found, please check sprod_log.txt.')
-
+    
 # clean up intermediate files in the input folder.
 os.system('rm -rf {}/*features.csv'.format(input_path))
