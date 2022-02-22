@@ -23,7 +23,7 @@ print('Done!')
 
 print('Testing Sprod in single mode')
 os.system(
-    'python {} {} {}/single_with_img'.format(denoise_jb, input_path, test_path))
+    'python {} {} {}/single_with_img -ci if'.format(denoise_jb, input_path, test_path))
 try:
     test_denoised = pd.read_csv(
         os.path.join(test_path,'single_with_img/sprod_Denoised_matrix.txt'), 
@@ -40,7 +40,7 @@ except FileNotFoundError:
 
 print('Testing Sprod in patches mode')
 os.system(
-    'python {} -y patches -pn 2 -pb 2 {} {}/batch_with_img'.format(denoise_jb, input_path, test_path))
+    'python {} -y patches -pn 2 -pb 2 {} {}/batch_with_img -ci if'.format(denoise_jb, input_path, test_path))
 try:
     test_denoised = pd.read_hdf(os.path.join(test_path,'batch_with_img/denoised_stiched.hdf'))
     ref_denoised = pd.read_hdf(os.path.join(output_path,'batch_with_img/denoised_stiched.hdf'))
@@ -53,7 +53,7 @@ except FileNotFoundError:
 
 
 print('Testing Sprod in single, pseudoimage mode')
-tif_fn =os.path.join(input_path, 'image.tif')
+tif_fn = os.path.join(input_path, 'image.tif')
 os.rename(tif_fn, tif_fn.replace('.tif',''))
 try:
     os.system(
@@ -77,4 +77,4 @@ except FileNotFoundError:
     print('Sprod denoise job failed: no output found, please check sprod_log.txt.')
 
 # clean up intermediate files in the input folder.
-# os.system('rm -rf {}/*features.csv'.format(input_path))
+os.system('rm -rf {}/*features.csv'.format(input_path))

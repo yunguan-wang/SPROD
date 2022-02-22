@@ -231,6 +231,7 @@ if __name__ == "__main__":
     sprod_weight_reg = args.sprod_weight_reg
     sprod_diag = args.sprod_diag
     image_feature_type = args.image_feature_type
+    img_type = args.img_type
     pn = args.num_of_patches
     pb = args.num_of_batches
     os_type = platform.system()
@@ -279,9 +280,8 @@ if __name__ == "__main__":
         num_tifs = len([x for x in os.listdir(input_path) if x[-4:] == ".tif"])
         if num_tifs == 1:
             logging.info(
-                "Extracting intensity and texture features from matching image."
+                "Extracting intensity and texture features from matching {} image".format(img_type.upper())
             )
-            img_type = args.img_type
             _ = extract_img_features(input_path, img_type, input_path)
         elif num_tifs == 0:
             logging.info("Use spot cluster probability as pseudo image features")
