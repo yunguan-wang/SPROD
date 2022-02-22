@@ -90,9 +90,21 @@ source(file.path(script_path,"denoise_functions.R"))
 Power_tsne_factor=7
 
 ##########read input######
+cat("inputing...\n\n")
 E=as.matrix(read.table(counts_fn,row.names = 1,header = T))
 C=read.csv(spot_meta_fn,row.names = 1,header = T,stringsAsFactors = F)
-R=min(max(C$X)-min(C$X),max(C$Y)-min(C$Y))*R_ratio
+if ("Z" %in% colnames(C)){
+  R=min(max(C$X)-min(C$X),max(C$Y)-min(C$Y),max(C$Z)-min(C$Z))*R_ratio
+  cat("Z column detected! \n")
+}else{
+  if ("X" %in% colnames(C) & "Y" %in% colnames(C)){
+    R=min(max(C$X)-min(C$X),max(C$Y)-min(C$Y))*R_ratio
+    cat("No Z column detected! \n")
+  }else{
+    cat("No correct columns for X and Y coordinates are found in spot_metadata! Please check your colnames. \n")
+  }
+}
+
 IF=as.matrix(read.csv(image_features_fn,row.names = 1,header = T))
 if (any(rownames(E) != rownames(C)) || any(rownames(E)!=rownames(IF))) {
   stop("Spot IDs mismatch!")
@@ -101,7 +113,15 @@ if (any(rownames(E) != rownames(C)) || any(rownames(E)!=rownames(IF))) {
 #######  initialization  #############
 cat("Constructing latent graph based on position and image features...\n\n")
 # proximity matrix
-P = as.matrix(dist(C[,c("X","Y")],diag = FALSE)) <= R
+
+if ("Z" %in% colnames(C)){
+  P = as.matrix(dist(C[,c("X","Y","Z")],diag = FALSE)) <= R
+}else{
+  if ("X" %in% colnames(C) & "Y" %in% colnames(C)){
+    P = as.matrix(dist(C[,c("X","Y")],diag = FALSE)) <= R
+  }
+}
+
 table(P)
 diag(P)=FALSE # set self proximity to 0
 P[lower.tri(P)]=F # for ensuring alpha_n1_n2=alpha_n2_n1
@@ -128,9 +148,10 @@ if (um) {
 }
 
 cat("Top 5 rows of input image features:\n\n")
-head(IF[1:5,1:5])
-
+head(IF[1:5,1:2])
+cat("\n\n")
 #######  spatial denoise  ##############
+cat("Denoising...\n\n")
 ptm <- proc.time()
 # similarity between spots in the original image feature space.
 sigma_n=find_sigma_n_all(t(IF),U,margin)
@@ -211,7 +232,6 @@ write.table(round(Y,d=5),
             sep='\t',row.names = T, col.names = T, quote=F)
 proc.time() - ptm
 ########## The following is only executed with diagnose mode on ##########
-
 if (diagnose) {
   # only needed for diagnose mode
   library(ggplot2)
