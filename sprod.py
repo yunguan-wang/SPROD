@@ -336,7 +336,7 @@ if __name__ == "__main__":
                 raise ValueError()
             inputs.append([cts_fn, meta_fn, feature_fn])
     else:
-        logging.info("Sprod-ready data format is single")
+        logging.info("Sprod-ready data format is single.")
         cts_fn = os.path.join(input_path, "Counts.txt")
         meta_fn = os.path.join(input_path, "Spot_metadata.csv")
         feature_fn = os.path.join(
@@ -347,16 +347,15 @@ if __name__ == "__main__":
         if not os.path.exists(feature_fn):
             if os.path.exists(pseudo_img_feature_fn):
                 feature_fn = pseudo_img_feature_fn
+                print('Image derived features not found, will use pseudo image features.')
+        # final check for all required input files.
         if not (
             os.path.exists(cts_fn)
             == os.path.exists(meta_fn)
             == os.path.exists(feature_fn)
             == True
         ):
-            logging.error(
-                "Counts.txt and/or Spotmeta.csv is missing from {}".format(input_path)
-            )
-            raise ValueError("Required data is missing!")
+            raise ValueError("Required data is missing! from {}".format(input_path))
         inputs = [[cts_fn, meta_fn, feature_fn]]
 
     logging.info("Total number of sprod jobs : {}".format(len(inputs)))
@@ -368,7 +367,7 @@ if __name__ == "__main__":
         if input_type == "patches":
             patch_name = cts_fn.split("/")[-1].replace("_Counts.txt", "")
         else:
-            patch_name = "sprod"
+            patch_name = output_prefix
         # Pack all parameters for denoise.R job
         sprod_cmd = ["Rscript", sprod_script]
         for sprod_key, param in zip(
