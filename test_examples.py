@@ -4,8 +4,9 @@
 
 import pandas as pd
 import os
+import platform
 
-
+os_type = platform.system()
 sprod_path = os.path.abspath(__file__)
 denoise_jb = sprod_path.replace('test_examples.py', 'sprod.py')
 input_path = sprod_path.replace('test_examples.py', 'test_example/input')
@@ -14,7 +15,10 @@ output_path = sprod_path.replace('test_examples.py', 'test_example/expected_outp
 sprod_path = sprod_path + '/sprod'
 
 print('Removing previous testing results...', end='')
-os.system('rm -rf {}/*'.format(test_path))
+if os_type == 'Windows':
+    os.system('del -r ./{}'.format(test_path))
+else:
+    os.system('rm -rf {}/'.format(test_path))
 print('Done!')
 
 print('Testing Sprod in single mode')
@@ -73,4 +77,4 @@ except FileNotFoundError:
     print('Sprod denoise job failed: no output found, please check sprod_log.txt.')
 
 # clean up intermediate files in the input folder.
-os.system('rm -rf {}/*features.csv'.format(input_path))
+# os.system('rm -rf {}/*features.csv'.format(input_path))
