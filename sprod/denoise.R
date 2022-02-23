@@ -90,9 +90,20 @@ source(file.path(script_path,"denoise_functions.R"))
 Power_tsne_factor=7
 
 ##########read input######
+cat("Inputing...\n\n")
 E=as.matrix(read.table(counts_fn,row.names = 1,header = T))
 C=read.csv(spot_meta_fn,row.names = 1,header = T,stringsAsFactors = F)
-R=min(max(C$X)-min(C$X),max(C$Y)-min(C$Y))*R_ratio
+if ("Z" %in% colnames(C)){
+  cat("Z column is detected!\n")
+  R=min(max(C$X)-min(C$X),max(C$Y)-min(C$Y),max(C$Z)-min(C$Z))*R_ratio
+}else{
+  if ("X" %in% colnames(C) & "Y" %in% colnames(C)){
+    cat("XY columns are detected but not Z!\n")
+    R=min(max(C$X)-min(C$X),max(C$Y)-min(C$Y))*R_ratio
+  }else{
+    cat ("No correct colnumns are detected! Please check the colnames of spot_metadata!\n")
+  }
+}
 IF=as.matrix(read.csv(image_features_fn,row.names = 1,header = T))
 if (any(rownames(E) != rownames(C)) || any(rownames(E)!=rownames(IF))) {
   stop("Spot IDs mismatch!")
@@ -101,7 +112,11 @@ if (any(rownames(E) != rownames(C)) || any(rownames(E)!=rownames(IF))) {
 #######  initialization  #############
 cat("Constructing latent graph based on position and image features...\n\n")
 # proximity matrix
-P = as.matrix(dist(C[,c("X","Y")],diag = FALSE)) <= R
+if ("Z" %in% colnames(C)){
+  P = as.matrix(dist(C[,c("X","Y","Z")],diag = FALSE)) <= R
+}else{
+  P = as.matrix(dist(C[,c("X","Y")],diag = FALSE)) <= R
+}
 table(P)
 diag(P)=FALSE # set self proximity to 0
 P[lower.tri(P)]=F # for ensuring alpha_n1_n2=alpha_n2_n1
@@ -115,11 +130,11 @@ ALPHA[] = 1/2*P
 IF=scale(IF,center=TRUE,scale=TRUE)
 IF0=IF #save the raw image features for plots#
 if (um) {
-  cat('Image features preprocessing: Umap.\n\n')
+  cat('Image features preprocessing: Umap...\n\n')
   IF=umap::umap(IF)$layout
   cat("IF: UMAP done!\n\n")
 } else {
-    cat('Image features preprocessing: PCA.\n\n')
+    cat('Image features preprocessing: PCA...\n\n')
     if (N_PC > 0) {
       IF = prcomp(IF)$x[,1:min(N_PC,dim(IF)[2])]
     } else {
@@ -128,9 +143,10 @@ if (um) {
 }
 
 cat("Top 5 rows of input image features:\n\n")
-head(IF[1:5,1:5])
-
+head(IF[1:5,1:2])
+cat("\n")
 #######  spatial denoise  ##############
+cat("Denoising ...\n")
 ptm <- proc.time()
 # similarity between spots in the original image feature space.
 sigma_n=find_sigma_n_all(t(IF),U,margin)
@@ -176,7 +192,7 @@ if (d) {
 E_denoised =  W %*% E
 
 # retrieve the embedding space
-cat("Retrieving the embedding space.\n\n")
+cat("Retrieving the embedding space...\n\n")
 Q = diag(1, dim(ALPHA)[1])+4*diag(rowSums(ALPHA))-4*ALPHA
 Q_inv=solve(Q)
 Q_inv=(Q_inv+t(Q_inv))/2
@@ -215,7 +231,7 @@ proc.time() - ptm
 if (diagnose) {
   # only needed for diagnose mode
   library(ggplot2)
-  cat("Diagnose mode is on, calculating diagnostic measures.\n\n")
+  cat("Diagnose mode is on, calculating diagnostic measures...\n\n")
   Stack <- data.frame(S4Vectors::stack(G))
   Stack <- Stack[which(Stack$value>0),]
   Stack$x1 <- C[Stack$row,"X"]

@@ -3,7 +3,7 @@ A convinient function to wrap all necessary processed in Sprod. Minimal data pro
 A 'Counts.txt' and a 'Spot_metadata.csv' is required to run this script.
 Also, if the input folder contains a image tif file, it will be used as the input matching
 image for feature extraction. Both files have rows as spots and with the same order.
-For data with matching image, the "Spot_metadata.csv" must have a "Spot_radius" 
+For data with matching image, the "Spot_metadata.csv" must have a "Spot_radius"
 column for spot features, or "Row" and "Col" columns for block features.
 
 Dependency
@@ -38,11 +38,11 @@ def sprod_worker(cmd):
     make_option(c("-c", "--Cspot"), help="Spot metadata, contains X, Y coordinates."),
     make_option(c("-f", "--ImageFeature"), help="Extracted image features"),
     make_option(c("-n", "--numberPC"), help="# Number of PCs to use"),
-    make_option(c("-r", "--Rratio"),help="Spot neighborhood radius ratio, 0-1, radius=R*min(xmax-xmin,ymax-ymin)"), 
+    make_option(c("-r", "--Rratio"),help="Spot neighborhood radius ratio, 0-1, radius=R*min(xmax-xmin,ymax-ymin)"),
     make_option(c("-u", "--U"),help="# perplexity, Tunable"),
-    make_option(c("-k", "--K"),help="latent space dimension, Tunable"), 
+    make_option(c("-k", "--K"),help="latent space dimension, Tunable"),
     make_option(c("-l", "--lambda"),help="# regularizer, tunable"),
-    make_option(c("-t", "--L_E"),help="regularizer for denoising"), 
+    make_option(c("-t", "--L_E"),help="regularizer for denoising"),
     make_option(c("-m", "--margin"), help="Margin for bisection search, smaller = slower => accuracy u"),
     make_option(c("-d","--diagNeighbor"),help = "To prevent over smooth."),
     make_option(c("-s", "--scriptPath"), help="path to the software folder"),
@@ -347,6 +347,7 @@ if __name__ == "__main__":
         )
         # always tries to use image derived features, then pseudo images.
         if not os.path.exists(feature_fn):
+            pseudo_img_feature_fn = os.path.join(input_path, 'pseudo_image_features.csv')
             if os.path.exists(pseudo_img_feature_fn):
                 feature_fn = pseudo_img_feature_fn
                 print('Image derived features not found, will use pseudo image features.')
@@ -410,7 +411,7 @@ if __name__ == "__main__":
         ):
             if isinstance(param, bool): # for toggles
                 if param:
-                    sprod_cmd.append(str(sprod_key)) 
+                    sprod_cmd.append(str(sprod_key))
             else: # for kwargs
                 sprod_cmd.append(sprod_key)
                 sprod_cmd.append(str(param))
@@ -428,4 +429,3 @@ if __name__ == "__main__":
         stiching_subsampled_patches(
             output_path, os.path.join(output_path, "denoised_stiched.hdf")
         )
-
