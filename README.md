@@ -64,7 +64,7 @@ python [path/to/sprod.py] [path/to/input_folder] [path/to/output_folder]
 ```
 
 ### Data preparation
-Sprod workflow requires two mandatory files, a `Counts.txt` for gene expression data,
+Sprod workflow requires two mandatory files, a `Counts.txt` (with "\t" as the delimiter) for gene expression data,
 
 ||gene1|gene2|gene3|gene4|gene5|
 |-----|-----|-----|-----|-----|-----|
@@ -84,7 +84,8 @@ as well as a `Spot_metadata.csv` for positional information of each sequenced sp
 |spot4|8|1|0.5|
 |spot5|1|7|0.5|
 
-Mandantory columns: `X`, `Y`, and `Spot_radius` stand for X coordinates, Y coordinates and the radius of each sequencing spot.
+Mandantory columns: `X`, `Y`, which stand for X coordinates, Y coordinates; `Spot_radius` is required when matching image is offered, which stand for the radius of each sequencing spot and used in feature extraction; 
+Optional columns: "Z" for Z coordinates if your spatial information has three dimensions. 
 
 We have included a `data_preprocessing.py` script in this repo for processing raw data in Visium or Slide-seq V2 format. For data from other sources, please refer to the script and process your data into the supported format.
 
