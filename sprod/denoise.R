@@ -1,4 +1,4 @@
-# Rversion>=4, need distances, dplyr, optparse, 
+# Rversion>=4, need distances, dplyr, optparse,
 # if diag=T, need ggplot2, gridExtra
 ######  load environment  ###########
 suppressPackageStartupMessages(library(distances))
@@ -6,12 +6,12 @@ suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(optparse))
 #######  read arguments  ##############
 option_list = list(
-  make_option(c("-e", "--Exp"), action="store", default=NA, 
+  make_option(c("-e", "--Exp"), action="store", default=NA,
               type='character',help="Expression matrix"),
-  make_option(c("-c", "--Cspot"), action="store", 
+  make_option(c("-c", "--Cspot"), action="store",
               default=NA, type='character',
               help="Spot metadata, contains X, Y coordinates."),
-  make_option(c("-f", "--ImageFeature"), action="store", 
+  make_option(c("-f", "--ImageFeature"), action="store",
               default=NA,type = 'character',
               help="Extracted image features"),
   make_option(c("-n", "--numberPC"), action="store",
@@ -23,22 +23,22 @@ option_list = list(
   make_option(c("-g","--diagnose"),action="store_true",dest = "diagnose",
               default = FALSE,type = "logical",
               help ="# Generate diagnostic figures or NOT. By default set to FALSE."),
-  make_option(c("-r", "--Rratio"), action="store", 
+  make_option(c("-r", "--Rratio"), action="store",
               default=0.08,type = 'double',
-              help="Spot neighborhood radius ratio, 0-1, radius=R*min(xmax-xmin,ymax-ymin)"), 
-  make_option(c("-u", "--U"), action="store", 
+              help="Spot neighborhood radius ratio, 0-1, radius=R*min(xmax-xmin,ymax-ymin)"),
+  make_option(c("-u", "--U"), action="store",
               default = 250,type = 'double',
               help="# perplexity, Tunable"),
-  make_option(c("-k", "--K"), action="store", 
+  make_option(c("-k", "--K"), action="store",
               default=10,type = 'double',
-              help="latent space dimension, Tunable"), 
-  make_option(c("-l", "--lambda"), action="store", 
+              help="latent space dimension, Tunable"),
+  make_option(c("-l", "--lambda"), action="store",
               default = 0.4,type = 'double',
               help="# regularizer, tunable"),
-  make_option(c("-t", "--L_E"), action="store", 
+  make_option(c("-t", "--L_E"), action="store",
               default=0.625,type = 'double',
-              help="regularizer for denoising"), 
-  make_option(c("-m", "--margin"), action="store", 
+              help="regularizer for denoising"),
+  make_option(c("-m", "--margin"), action="store",
               default = 0.001,type = 'double',
               help="Margin for bisection search, smaller = slower => accuracy u"),
   make_option(c("-d","--diagNeighbor"),action="store_true",
@@ -47,10 +47,10 @@ option_list = list(
   make_option(c("-s", "--scriptPath"), action="store",
               default=NA, type ='character',
               help="path to the software folder"),
-  make_option(c("-o", "--outputPath"), action="store", 
+  make_option(c("-o", "--outputPath"), action="store",
               default=NA, type ='character',
               help="Output path"),
-  make_option(c("-p", "--projectID"), action="store", 
+  make_option(c("-p", "--projectID"), action="store",
               default=NA, type = 'character',
               help="# project name, First part of names in the output")
   )
@@ -68,7 +68,7 @@ U=opt$U # perplexity, Tunable
 K=opt$K # latent space dimension, Tunable
 LAMBDA=opt$lambda # regularizer, tunable
 L_E=opt$L_E # regularizer for denoising
-margin=opt$margin # Margin for bisection search, smaller = slower => accuracy up 
+margin=opt$margin # Margin for bisection search, smaller = slower => accuracy up
 d = opt$diagNeighbor
 script_path=opt$scriptPath # path to the software folder
 output_path=opt$outputPath # output path
@@ -83,28 +83,27 @@ source(file.path(script_path,"denoise_functions.R"))
 
 # (1) in practice, we specify an even stronger sufficient condition
 # regarding the relationship between d(y) and 1-(p_n_n + t(p_n_n))/2
-# this part is tricky. need to think about how to justify 
+# this part is tricky. need to think about how to justify
 # for this theorectically, in the best way
-# (2) test this in simulation carefully but we want to be vague 
+# (2) test this in simulation carefully but we want to be vague
 # about this in the paper
 Power_tsne_factor=7
 
 ##########read input######
-cat("inputing...\n\n")
+cat("Inputing...\n\n")
 E=as.matrix(read.table(counts_fn,row.names = 1,header = T))
 C=read.csv(spot_meta_fn,row.names = 1,header = T,stringsAsFactors = F)
 if ("Z" %in% colnames(C)){
+  cat("Z column is detected!\n")
   R=min(max(C$X)-min(C$X),max(C$Y)-min(C$Y),max(C$Z)-min(C$Z))*R_ratio
-  cat("Z column detected! \n")
 }else{
   if ("X" %in% colnames(C) & "Y" %in% colnames(C)){
+    cat("XY columns are detected but not Z!\n")
     R=min(max(C$X)-min(C$X),max(C$Y)-min(C$Y))*R_ratio
-    cat("No Z column detected! \n")
   }else{
-    cat("No correct columns for X and Y coordinates are found in spot_metadata! Please check your colnames. \n")
+    cat ("No correct colnumns are detected! Please check the colnames of spot_metadata!\n")
   }
 }
-
 IF=as.matrix(read.csv(image_features_fn,row.names = 1,header = T))
 if (any(rownames(E) != rownames(C)) || any(rownames(E)!=rownames(IF))) {
   stop("Spot IDs mismatch!")
@@ -113,15 +112,11 @@ if (any(rownames(E) != rownames(C)) || any(rownames(E)!=rownames(IF))) {
 #######  initialization  #############
 cat("Constructing latent graph based on position and image features...\n\n")
 # proximity matrix
-
 if ("Z" %in% colnames(C)){
   P = as.matrix(dist(C[,c("X","Y","Z")],diag = FALSE)) <= R
 }else{
-  if ("X" %in% colnames(C) & "Y" %in% colnames(C)){
-    P = as.matrix(dist(C[,c("X","Y")],diag = FALSE)) <= R
-  }
+  P = as.matrix(dist(C[,c("X","Y")],diag = FALSE)) <= R
 }
-
 table(P)
 diag(P)=FALSE # set self proximity to 0
 P[lower.tri(P)]=F # for ensuring alpha_n1_n2=alpha_n2_n1
@@ -135,11 +130,11 @@ ALPHA[] = 1/2*P
 IF=scale(IF,center=TRUE,scale=TRUE)
 IF0=IF #save the raw image features for plots#
 if (um) {
-  cat('Image features preprocessing: Umap.\n\n')
+  cat('Image features preprocessing: Umap...\n\n')
   IF=umap::umap(IF)$layout
   cat("IF: UMAP done!\n\n")
 } else {
-    cat('Image features preprocessing: PCA.\n\n')
+    cat('Image features preprocessing: PCA...\n\n')
     if (N_PC > 0) {
       IF = prcomp(IF)$x[,1:min(N_PC,dim(IF)[2])]
     } else {
@@ -158,7 +153,7 @@ sigma_n=find_sigma_n_all(t(IF),U,margin)
 euc_dist2=as.matrix(dist(IF,diag = FALSE))^2
 # probably will need some work to improve the computational efficiency
 # of p_n_n. future work
-p_n_n=sapply(1:dim(IF)[1], 
+p_n_n=sapply(1:dim(IF)[1],
              function(n) calculate_spot_dist(n,sigma_n,euc_dist2))
 p_nn_tsne=1-(p_n_n + t(p_n_n))/2
 p_nn_tsne=p_nn_tsne^(dim(IF)[1]/Power_tsne_factor)
@@ -167,8 +162,8 @@ p_nn_tsne=p_nn_tsne^(dim(IF)[1]/Power_tsne_factor)
 while (1==1) {
   ALPHA[]=optim(as.vector(ALPHA),fn=fr,gr=gr,method='L-BFGS-B',
                 lower=0,upper=P*1,data=list(LAMBDA, p_nn_tsne, P , K),
-                control=list(trace=T))$par 
-  
+                control=list(trace=T))$par
+
   if (sum(ALPHA>0)>0) {break}
   cat("Lambda is set too large (trivial solution)!\n\n")
   LAMBDA=LAMBDA*0.8
@@ -197,7 +192,7 @@ if (d) {
 E_denoised =  W %*% E
 
 # retrieve the embedding space
-cat("Retrieving the embedding space.\n\n")
+cat("Retrieving the embedding space...\n\n")
 Q = diag(1, dim(ALPHA)[1])+4*diag(rowSums(ALPHA))-4*ALPHA
 Q_inv=solve(Q)
 Q_inv=(Q_inv+t(Q_inv))/2
@@ -235,18 +230,18 @@ proc.time() - ptm
 if (diagnose) {
   # only needed for diagnose mode
   library(ggplot2)
-  cat("Diagnose mode is on, calculating diagnostic measures.\n\n")
+  cat("Diagnose mode is on, calculating diagnostic measures...\n\n")
   Stack <- data.frame(S4Vectors::stack(G))
   Stack <- Stack[which(Stack$value>0),]
   Stack$x1 <- C[Stack$row,"X"]
   Stack$y1 <- C[Stack$row,"Y"]
   Stack$x2 <- C[Stack$col,"X"]
   Stack$y2 <- C[Stack$col,"Y"]
-  
+
   cellNames= data.frame(t(Stack[,1:2]))
   Stack$pair = sapply(cellNames,function(x) {paste0(sort(x)[1],sort(x)[2])})
   ## Generate the t_SNE plot
-  
+
   tsne <- Rtsne::Rtsne(IF0,check_duplicates = FALSE)
   rownames(tsne$Y)= rownames(IF0)
   colnames(tsne$Y) = c("tsne1","tsne2")
@@ -254,16 +249,16 @@ if (diagnose) {
   Stack$tsne12 <- tsne$Y[Stack$row,"tsne2"]
   Stack$tsne21 <- tsne$Y[Stack$col,"tsne1"]
   Stack$tsne22 <- tsne$Y[Stack$col,"tsne2"]
-  
+
   if (um) {
     colnames(IF) = c("umap1","umap2")
     Stack$umap11 <- IF[Stack$row,"umap1"]
     Stack$umap12 <- IF[Stack$row,"umap2"]
     Stack$umap21 <- IF[Stack$col,"umap1"]
     Stack$umap22 <- IF[Stack$col,"umap2"]
-    
+
   } else {
- 
+
     IFump=umap::umap(IF0)$layout
     colnames(IFump) = c("umap1","umap2")
     Stack$umap11 <- IFump[Stack$row,"umap1"]
@@ -290,7 +285,7 @@ if (diagnose) {
   dev.off()
 
   pdf(file.path(output_path, 'Diagnose_TSNE.pdf'))
-  p = ggplot(Stack_plot,aes(x=tsne11,y=tsne12)) + 
+  p = ggplot(Stack_plot,aes(x=tsne11,y=tsne12)) +
     geom_line(aes(group=pair
                   ,color=value
                   ,alpha=value))+
@@ -301,7 +296,7 @@ if (diagnose) {
   dev.off()
 
   pdf(file.path(output_path, 'Diagnose_UMAP.pdf'))
-  p = ggplot(Stack_plot,aes(x=umap11,y=umap12)) + 
+  p = ggplot(Stack_plot,aes(x=umap11,y=umap12)) +
     geom_line(aes(group=pair
                   ,color=value
                   ,alpha=value))+
