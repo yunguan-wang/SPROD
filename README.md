@@ -64,7 +64,7 @@ python [path/to/sprod.py] [path/to/input_folder] [path/to/output_folder]
 ```
 
 ### Data preparation
-Sprod workflow requires two mandatory files, a `Counts.txt` for gene expression data,
+Sprod workflow requires two mandatory files, a `Counts.txt` (with "\t" as the delimiter) for gene expression data,
 
 ||gene1|gene2|gene3|gene4|gene5|
 |-----|-----|-----|-----|-----|-----|
@@ -84,7 +84,8 @@ as well as a `Spot_metadata.csv` for positional information of each sequenced sp
 |spot4|8|1|0.5|
 |spot5|1|7|0.5|
 
-Mandantory columns: `X`, `Y`, and `Spot_radius` stand for X coordinates, Y coordinates and the radius of each sequencing spot.
+Mandantory columns: `X`, `Y`, which stand for X coordinates, Y coordinates; `Spot_radius` is required when matching image is offered, which stand for the radius of each sequencing spot and used in feature extraction; 
+Optional columns: "Z" for Z coordinates if your spatial information has three dimensions. 
 
 We have included a `data_preprocessing.py` script in this repo for processing raw data in Visium or Slide-seq V2 format. For data from other sources, please refer to the script and process your data into the supported format.
 
@@ -100,8 +101,9 @@ Note: for block mask shape, the `Row` and `Col` columns must be present in the `
 Sometimes the ST dataset does not have a matching image, such as those from the Slide-Seq platform and a Visium dataset without high-resolution image. In this case, Sprod will apply soft clustering on the spots based on gene expression and will use the cluster identities/probabilities as the input features for denoising, which we call pseudo-image features. Sprod does this through calling the [make_pseudo_img](https://github.com/yunguan-wang/SPROD/blob/master/sprod/pseudo_image_gen.py#L71) function.
 
 ### Handling very big spatial dataset
-Sprod works well with datasets of thousands of sequencing spots/beads. However, for large datasets with tens of thousands of spots/beads, special operations must be performed so that Sprod can run smoothly. Srpod employs a splitting-stitching scheme to facilitate large dataset processing. Each Slide-seq dataset is randomly (not dependent on spatial location) divided into n (10 by default) equal-sized subsets, and this process is repeated b (10 by default) times. Then, Sprod denoising is performed on each of the n * b subsets and the denoised results are concatenated. Each spot is exactly denoised b times, and the concatenated denoised data from the n sampling batches are averaged so that the randomness resulting from the sub-sampling procedure is averaged out. 
+Sprod works well with datasets of thousands of sequencing spots/beads. However, for large datasets with tens of thousands of spots/beads, special operations must be performed so that Sprod can run smoothly. Srpod employs a splitting-stitching scheme to facilitate large dataset processing. Each Slide-seq dataset is randomly (not dependent on spatial location) divided into n (10 by default) equal-sized subsets, and this process is repeated b (10 by default) times. Then, Sprod denoising is performed on each of the n * b subsets and the denoised results are concatenated. Each spot is exactly denoised b times, and the concatenated denoised data from the n sampling batches are averaged so that the randomness resulting from the sub-sampling procedure is averaged out. In the mode of "patches", the computational time is linearly relative to the number of sequncing spots/cells. 
 
+<img src = "https://github.com/yunguan-wang/SPROD/blob/QBRC_SS/img/timexspots.png" height="450" width="500">
 
 ### List of Parameters
 ```
