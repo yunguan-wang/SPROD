@@ -104,6 +104,7 @@ Sometimes the ST dataset does not have a matching image, such as those from the 
 Sprod works well with datasets of thousands of sequencing spots/beads. However, for large datasets with tens of thousands of spots/beads, special operations must be performed so that Sprod can run smoothly. Srpod employs a splitting-stitching scheme to facilitate large dataset processing. Each Slide-seq dataset is randomly (not dependent on spatial location) divided into n (10 by default) equal-sized subsets, and this process is repeated b (10 by default) times. Then, Sprod denoising is performed on each of the n * b subsets and the denoised results are concatenated. Each spot is exactly denoised b times, and the concatenated denoised data from the n sampling batches are averaged so that the randomness resulting from the sub-sampling procedure is averaged out. In the mode of "patches", the computational time is linearly relative to the number of sequncing spots/cells. 
 
 <img src = "https://github.com/yunguan-wang/SPROD/blob/QBRC_SS/img/timexspots.png" height="450" width="500">
+
 ### List of Parameters
 ```
 positional arguments:
