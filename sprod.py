@@ -307,6 +307,7 @@ if __name__ == "__main__":
             if not os.path.exists(feature_fn):
                 if os.path.exists(pseudo_img_feature_fn):
                     feature_fn = pseudo_img_feature_fn
+                    print('Image derived features not found, will use pseudo image features.')
             if not os.path.exists(intermediate_path):
                 os.makedirs(intermediate_path)
             subsample_patches(input_path, intermediate_path, feature_fn, pn, pb)
