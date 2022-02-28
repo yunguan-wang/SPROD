@@ -90,7 +90,7 @@ Optional columns: "Z" for Z coordinates if your spatial information has three di
 We have included a `data_preprocessing.py` script in this repo for processing raw data in Visium or Slide-seq V2 format. For data from other sources, please refer to the script and process your data into the supported format.
 
 ### Feature extraction
-Feature extraction (with matching image) or generation (without matching image) is wrapped up in the `sprod.py` script. The process is summerized briefly in below.
+Feature extraction (with matching image) or generation (without matching image) is wrapped up in the `sprod.py` script. The feature extraction process is carried out automatically on the fly, and the details are also summerized briefly in below.
 
 #### Dataset with a matching image
 Sprod works best when the spatial dataset contains a matching image (such as 10X Visium). For this type of datasets, Sprod will extract image features using the [extract_img_features](https://github.com/yunguan-wang/SPROD/blob/master/sprod/feature_extraction.py#L29) function, which will look at image patches around each spot and extract intensity and texture features. The shape of the image patch can be specified using the `--feature_mask_shape` parameter. For Dataset in which sequencing spots, the region of interest can be the exact sequencing spot ('spot'), or a rectangular box surrounding each spot ('block). 
@@ -156,6 +156,8 @@ A few additional notes for the parameters:
 `--type` or `-y` : For small datasets with a few thousands spots, this should be set to `single`, while for larger datasets with tens of thousands of spots, this should be set to `patches` to let Sprod run on subsampled patches in parallell to avoid memory problems.
 
 `--warm_start` or `-ws` : This is helpful if image features were extracted in a previous run and a new run is desired with new parameter sets only for the denoising steps. Sprod will automatically look for the needed files in the input directory. 
+
+#### Note: In warm start mode, if the input folder contains both real image features and pseudo image features, sprod will only use real image features. If you want to run sprod using the pseudo image features, please remove the real image features named `[spot/block]_level_[intensity/texture]_features.csv`.
 
 ## Example applications
 ### Application on Visium
