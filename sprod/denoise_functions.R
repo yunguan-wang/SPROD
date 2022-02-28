@@ -3,7 +3,9 @@ calculate_spot_dist <- function(n2, sigma_n, euc_dist2)
     # calculate spot distance based on gaussian kernal regulated euclidean distance
     # n1, n2 is indicies, sigma_n is a vector of N and euc_distance is a matrix of N x N.
     # will return a vector of N, which is P_n_n2
-    d_n_n2 = exp(-euc_dist2[,n2]/2/sigma_n[n2]^2)
+    tmp = -euc_dist2[,n2]/2/sigma_n[n2]^2
+    tmp = tmp - max(tmp[-n2])
+    d_n_n2 = exp(tmp)
     p_n_n2 =d_n_n2/sum(d_n_n2[-n2])
     p_n_n2[n2] = 0
     return(p_n_n2)
