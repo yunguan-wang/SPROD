@@ -231,6 +231,7 @@ if __name__ == "__main__":
     sprod_weight_reg = args.sprod_weight_reg
     sprod_diag = args.sprod_diag
     image_feature_type = args.image_feature_type
+    img_type = args.img_type
     pn = args.num_of_patches
     pb = args.num_of_batches
     os_type = platform.system()
@@ -279,9 +280,8 @@ if __name__ == "__main__":
         num_tifs = len([x for x in os.listdir(input_path) if x[-4:] == ".tif"])
         if num_tifs == 1:
             logging.info(
-                "Extracting intensity and texture features from matching image."
+                "Extracting intensity and texture features from matching {} image".format(img_type.upper())
             )
-            img_type = args.img_type
             _ = extract_img_features(input_path, img_type, input_path)
         elif num_tifs == 0:
             logging.info("Use spot cluster probability as pseudo image features")
@@ -338,7 +338,7 @@ if __name__ == "__main__":
                 raise ValueError()
             inputs.append([cts_fn, meta_fn, feature_fn])
     else:
-        logging.info("Sprod-ready data format is single")
+        logging.info("Sprod-ready data format is single.")
         cts_fn = os.path.join(input_path, "Counts.txt")
         meta_fn = os.path.join(input_path, "Spot_metadata.csv")
         feature_fn = os.path.join(
@@ -350,16 +350,15 @@ if __name__ == "__main__":
             pseudo_img_feature_fn = os.path.join(input_path, 'pseudo_image_features.csv')
             if os.path.exists(pseudo_img_feature_fn):
                 feature_fn = pseudo_img_feature_fn
+                print('Image derived features not found, will use pseudo image features.')
+        # final check for all required input files.
         if not (
             os.path.exists(cts_fn)
             == os.path.exists(meta_fn)
             == os.path.exists(feature_fn)
             == True
         ):
-            logging.error(
-                "Counts.txt and/or Spotmeta.csv is missing from {}".format(input_path)
-            )
-            raise ValueError("Required data is missing!")
+            raise ValueError("Required data is missing! from {}".format(input_path))
         inputs = [[cts_fn, meta_fn, feature_fn]]
 
     logging.info("Total number of sprod jobs : {}".format(len(inputs)))
