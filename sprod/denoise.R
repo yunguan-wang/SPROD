@@ -146,7 +146,6 @@ cat("Top 5 rows of input image features:\n\n")
 head(IF[1:5,1:2])
 cat("\n\n")
 #######  spatial denoise  ##############
-cat("Denoising...\n\n")
 ptm <- proc.time()
 # similarity between spots in the original image feature space.
 sigma_n=find_sigma_n_all(t(IF),U,margin)
@@ -155,9 +154,13 @@ euc_dist2=as.matrix(dist(IF,diag = FALSE))^2
 # of p_n_n. future work
 p_n_n=sapply(1:dim(IF)[1],
              function(n) calculate_spot_dist(n,sigma_n,euc_dist2))
+if (!all(complete.cases(p_n_n))){
+  cat("Error: NA in distance matrix! Please check your image features!\n")
+}
 p_nn_tsne=1-(p_n_n + t(p_n_n))/2
 p_nn_tsne=p_nn_tsne^(dim(IF)[1]/Power_tsne_factor)
-
+# p_nn_tsne could have null values using simulated data.
+p_nn_tsne[is.na(p_nn_tsne)]=0
 # Build a graph based on image features and spot closeness
 while (1==1) {
   ALPHA[]=optim(as.vector(ALPHA),fn=fr,gr=gr,method='L-BFGS-B',
@@ -170,6 +173,7 @@ while (1==1) {
   cat(paste("Resetting to",LAMBDA,"\n\n"))
 }
 
+cat("Graph construction succeeded.\n\n")
 cat("Number of non-zero edges: \n")
 table(ALPHA>0)
 
