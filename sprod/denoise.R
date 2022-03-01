@@ -160,7 +160,11 @@ if (!all(complete.cases(p_n_n))){
 p_nn_tsne=1-(p_n_n + t(p_n_n))/2
 p_nn_tsne=p_nn_tsne^(dim(IF)[1]/Power_tsne_factor)
 # p_nn_tsne could have null values using simulated data.
-p_nn_tsne[is.na(p_nn_tsne)]=0
+if (!all(complete.cases(p_nn_tsne))) {
+  cat("Warning: Latent space proximity matrix contains Nan, filling those with 0s\n")
+  p_nn_tsne[is.na(p_nn_tsne)]=0
+}
+
 # Build a graph based on image features and spot closeness
 while (1==1) {
   ALPHA[]=optim(as.vector(ALPHA),fn=fr,gr=gr,method='L-BFGS-B',
