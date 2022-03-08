@@ -33,7 +33,7 @@ option_list = list(
               default=10,type = 'double',
               help="latent space dimension, Tunable"),
   make_option(c("-l", "--lambda"), action="store",
-              default = 0.4,type = 'double',
+              default = 1,type = 'double',
               help="# regularizer, tunable"),
   make_option(c("-t", "--L_E"), action="store",
               default=0.625,type = 'double',
@@ -160,10 +160,8 @@ if (!all(complete.cases(p_n_n))){
 p_nn_tsne=1-(p_n_n + t(p_n_n))/2
 p_nn_tsne=p_nn_tsne^(dim(IF)[1]/Power_tsne_factor)
 # p_nn_tsne could have null values using simulated data.
-if (!all(complete.cases(p_nn_tsne))) {
-  cat("Warning: Latent space proximity matrix contains Nan, filling those with 0s\n")
-  p_nn_tsne[is.na(p_nn_tsne)]=0
-}
+try(if(!all(complete.cases(p_nn_tsne))) 
+  stop("Error: Latent space proximity matrix contains Nan!\n"))
 
 # Build a graph based on image features and spot closeness
 while (1==1) {
@@ -212,7 +210,6 @@ tmp=diag(dim(Q_inv)[1])-tmp
 decomposition=eigen(tmp %*% Q_inv %*% tmp)
 Y=decomposition$vectors %*% diag(decomposition$values)^0.5
 Y=Y[,1:K]
-
 #########  output  ##############
 cat("Saving outputs...\n\n")
 rownames(E_denoised)=rownames(E)
@@ -234,6 +231,14 @@ write.table(round(Y,d=5),
             file.path(output_path,Y_fn),
             sep='\t',row.names = T, col.names = T, quote=F)
 proc.time() - ptm
+
+########## Correlations calculation#######
+
+#typeof(dist(C))
+cor1=cor(as.matrix(dist(C)),G)
+cor2=cor(as.matrix(dist(IF)),G)
+cat(paste("Correlations: -physical:",mean(cor1,na.rm = T),"-image:",mean(cor2,na.rm = T),"\n\n"))
+
 ########## The following is only executed with diagnose mode on ##########
 if (diagnose) {
   # only needed for diagnose mode
