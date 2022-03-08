@@ -237,7 +237,7 @@ proc.time() - ptm
 #typeof(dist(C))
 cor1=cor(as.matrix(dist(C)),G)
 cor2=cor(as.matrix(dist(IF)),G)
-cat(paste("Correlations: -physical:",mean(cor1,na.rm = T),"-image:",mean(cor2,na.rm = T)))
+cat(paste("Correlations: -physical:",mean(cor1,na.rm = T),"-image:",mean(cor2,na.rm = T),"\n\n"))
 
 ########## The following is only executed with diagnose mode on ##########
 if (diagnose) {
