@@ -20,6 +20,7 @@ import os
 import sys
 import argparse
 import logging
+import numpy as np
 from multiprocessing import Pool
 from sprod.feature_extraction import extract_img_features
 from sprod.pseudo_image_gen import make_pseudo_img
@@ -159,7 +160,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--sprod_weight_reg",
         "-w",
-        default=0.625,
+        default=0.4,
         type=float,
         help="Regularization term for the denoising weights.",
     )
@@ -189,6 +190,14 @@ if __name__ == "__main__":
         action="store_true",
         help="Toggle for warm start, which will skip all preprocessing steps \
             including feature extraction and patch-making.",
+    )
+
+    parser.add_argument(
+        "--diag_mode",
+        "-dg",
+        default=False,
+        action="store_true",
+        help="Toggle invoking plotting dianosis plots in denoise.R",
     )
 
     parser.add_argument(
@@ -230,9 +239,10 @@ if __name__ == "__main__":
     sprod_graph_reg = args.sprod_graph_reg
     sprod_weight_reg = args.sprod_weight_reg
     sprod_diag = args.sprod_diag
+    sprod_diagnose = args.diag_mode
     image_feature_type = args.image_feature_type
     img_type = args.img_type
-    pn = args.num_of_patches
+    # pn = args.num_of_patches
     pb = args.num_of_batches
     os_type = platform.system()
 
@@ -310,6 +320,9 @@ if __name__ == "__main__":
                     print('Image derived features not found, will use pseudo image features.')
             if not os.path.exists(intermediate_path):
                 os.makedirs(intermediate_path)
+            cts_fn = os.path.join(input_path, "Counts.txt")
+            n_spots = sum(1 for _ in open(cts_fn))
+            pn = int(np.ceil(n_spots / 5000))
             subsample_patches(input_path, intermediate_path, feature_fn, pn, pb)
             input_path = intermediate_path
         elif input_type == "single":
@@ -391,6 +404,7 @@ if __name__ == "__main__":
                 "-s",
                 "-o",
                 "-p",
+                "-g",
             ],
             [
                 cts_fn,
@@ -408,6 +422,7 @@ if __name__ == "__main__":
                 sprod_path,
                 os.path.abspath(output_path),
                 patch_name,
+                sprod_diagnose,
             ],
         ):
             if isinstance(param, bool): # for toggles
