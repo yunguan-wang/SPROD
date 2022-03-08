@@ -185,7 +185,8 @@ ALPHA=ALPHA+t(ALPHA)
 # Denoise expression matrix based on the graph
 G = ALPHA/1
 rownames(G)=colnames(G)=rownames(E)
-
+#####MARK HERE: if dryrun, output of distance can be inserted here!!!########
+#######WetRun Going on below#######
 W = solve(diag(1, dim(G)[1]) + L_E * (diag(rowSums(G)) - G))
 if (d) {
   cat("Weight matrix is forced to be diagonal\n\n")
@@ -210,6 +211,134 @@ tmp=diag(dim(Q_inv)[1])-tmp
 decomposition=eigen(tmp %*% Q_inv %*% tmp)
 Y=decomposition$vectors %*% diag(decomposition$values)^0.5
 Y=Y[,1:K]
+proc.time() - ptm
+
+########## The following is only executed with diagnose mode on ##########
+if (diagnose) {
+  # only needed for diagnose mode
+  #######Output sum of dist#######
+  Stack <- data.frame(S4Vectors::stack(G))
+  Stack$x1 <- C[Stack$row,"X"]
+  Stack$y1 <- C[Stack$row,"Y"]
+  Stack$x2 <- C[Stack$col,"X"]
+  Stack$y2 <- C[Stack$col,"Y"]
+  if ("Z" %in% colnames(C)){
+    Stack$z1 <- C[Stack$row,"Z"]
+    Stack$z2 <- C[Stack$col,"Z"]
+  }
+  ## Generate the t_SNE plot
+  
+  tsne <- Rtsne::Rtsne(IF0,check_duplicates = FALSE)
+  rownames(tsne$Y)= rownames(IF0)
+  colnames(tsne$Y) = c("tsne1","tsne2")
+  Stack$tsne11 <- tsne$Y[Stack$row,"tsne1"]
+  Stack$tsne12 <- tsne$Y[Stack$row,"tsne2"]
+  Stack$tsne21 <- tsne$Y[Stack$col,"tsne1"]
+  Stack$tsne22 <- tsne$Y[Stack$col,"tsne2"]
+  
+  if (um) {
+    colnames(IF) = c("umap1","umap2")
+    Stack$umap11 <- IF[Stack$row,"umap1"]
+    Stack$umap12 <- IF[Stack$row,"umap2"]
+    Stack$umap21 <- IF[Stack$col,"umap1"]
+    Stack$umap22 <- IF[Stack$col,"umap2"]
+    
+  } else {
+    
+    IFump=umap::umap(IF0)$layout
+    colnames(IFump) = c("umap1","umap2")
+    Stack$umap11 <- IFump[Stack$row,"umap1"]
+    Stack$umap12 <- IFump[Stack$row,"umap2"]
+    Stack$umap21 <- IFump[Stack$col,"umap1"]
+    Stack$umap22 <- IFump[Stack$col,"umap2"]
+  }
+  
+  Stack$rk = rank(Stack$value,ties.method = "random")
+  Stack %>%
+    arrange(desc(rk)) %>%
+    head(1000) -> Stack_top
+  head(Stack_top)
+  if ("Z" %in% colnames(C)){
+    spa = t(Stack_top[,c("x1","y1","z1","x2","y2","z2")])
+  }else{
+    spa = t(Stack_top[,c("x1","y1","x2","y2")])
+  }
+  tsn = t(Stack_top[,c("tsne11","tsne12","tsne21","tsne22")])
+  ump = t(Stack_top[,c("umap11","umap12","umap21","umap22")])
+  if ("Z" %in% colnames(C)){
+    dist_spa=sapply(data.frame(spa), function(x){dist(rbind(x[1:3],x[4:6]))})
+  }else{
+    dist_spa=sapply(data.frame(spa), function(x){dist(rbind(x[1:2],x[3:4]))})
+  }
+  dist_tsn=sapply(data.frame(tsn), function(x){dist(rbind(x[1:2],x[3:4]))})
+  dist_ump=sapply(data.frame(ump), function(x){dist(rbind(x[1:2],x[3:4]))})
+  
+  dist_out=sapply(list(dist_spa,dist_tsn,dist_ump), sum,na.rm=T)
+  cat(paste("Sum of distance: \n-spatial:",dist_out[1],
+            "\n-image tsne:",dist_out[2],
+            "\n-image umap:",dist_out[3],"\n\n"))
+  
+  # Prepare for diagnostic figures
+  library(ggplot2)
+  cat("Diagnose mode is on, calculating diagnostic measures...\n\n")
+  Stack <- Stack[which(Stack$value>0),]
+  cellNames= data.frame(t(Stack[,1:2]))
+  Stack$pair = sapply(cellNames,function(x) {paste0(sort(x)[1],sort(x)[2])})
+  
+  
+  # Plotting diagnostic measures
+  # Only plot 5000 edges.
+  if (length(table(Stack$pair)) > 5000) {
+    Stack_plot = filter(Stack, pair %in% sample(names(table(Stack$pair)),5000))
+  } else {
+    Stack_plot = Stack
+  }
+  
+  pdf(file.path(output_path, 'Diagnose_Spatial.pdf'))
+  p = ggplot(Stack_plot,aes(x=x1,y=y1))+
+    geom_line(aes(group=pair,color=value,alpha=value))+
+    xlab("X")+
+    ylab("Y")+
+    ggtitle("Spatial")
+  print(p)
+  dev.off()
+  
+  pdf(file.path(output_path, 'Diagnose_TSNE.pdf'))
+  p = ggplot(Stack_plot,aes(x=tsne11,y=tsne12)) +
+    geom_line(aes(group=pair
+                  ,color=value
+                  ,alpha=value))+
+    xlab("TSNE1")+
+    ylab("TSNE2")+
+    ggtitle("TSNE")
+  print(p)
+  dev.off()
+  
+  pdf(file.path(output_path, 'Diagnose_UMAP.pdf'))
+  p = ggplot(Stack_plot,aes(x=umap11,y=umap12)) +
+    geom_line(aes(group=pair
+                  ,color=value
+                  ,alpha=value))+
+    xlab("UMAP1")+
+    ylab("UMAP2")+
+    ggtitle("UMAP")
+  print(p)
+  dev.off()
+}
+
+########## End of diagnose part ########
+
+##########Export correlations #######
+#cor1=cor(as.matrix(dist(C)),G)
+#cor2=cor(as.matrix(dist(IF)),G)
+#Scor1=cor(as.matrix(dist(C)),G,method = "spearman")
+#Scor2=cor(as.matrix(dist(IF)),G,method = "spearman")
+#Cors=sapply(list(cor1,cor2,Scor1,Scor2),mean,na.rm=T)
+#cat(paste("Correlations: \n-physical:",Cors[1],
+#          "\n-image:",Cors[2],"\n-physical spearman:",Cors[3],
+#          "\n-image spearman:",Cors[4],
+#          "\n\n"))
+
 #########  output  ##############
 cat("Saving outputs...\n\n")
 rownames(E_denoised)=rownames(E)
@@ -230,94 +359,6 @@ write.table(round(G,d=5),
 write.table(round(Y,d=5),
             file.path(output_path,Y_fn),
             sep='\t',row.names = T, col.names = T, quote=F)
-proc.time() - ptm
 
-########## Correlations calculation#######
 
-#typeof(dist(C))
-cor1=cor(as.matrix(dist(C)),G)
-cor2=cor(as.matrix(dist(IF)),G)
-cat(paste("Correlations: -physical:",mean(cor1,na.rm = T),"-image:",mean(cor2,na.rm = T),"\n\n"))
 
-########## The following is only executed with diagnose mode on ##########
-if (diagnose) {
-  # only needed for diagnose mode
-  library(ggplot2)
-  cat("Diagnose mode is on, calculating diagnostic measures...\n\n")
-  Stack <- data.frame(S4Vectors::stack(G))
-  Stack <- Stack[which(Stack$value>0),]
-  Stack$x1 <- C[Stack$row,"X"]
-  Stack$y1 <- C[Stack$row,"Y"]
-  Stack$x2 <- C[Stack$col,"X"]
-  Stack$y2 <- C[Stack$col,"Y"]
-
-  cellNames= data.frame(t(Stack[,1:2]))
-  Stack$pair = sapply(cellNames,function(x) {paste0(sort(x)[1],sort(x)[2])})
-  ## Generate the t_SNE plot
-
-  tsne <- Rtsne::Rtsne(IF0,check_duplicates = FALSE)
-  rownames(tsne$Y)= rownames(IF0)
-  colnames(tsne$Y) = c("tsne1","tsne2")
-  Stack$tsne11 <- tsne$Y[Stack$row,"tsne1"]
-  Stack$tsne12 <- tsne$Y[Stack$row,"tsne2"]
-  Stack$tsne21 <- tsne$Y[Stack$col,"tsne1"]
-  Stack$tsne22 <- tsne$Y[Stack$col,"tsne2"]
-
-  if (um) {
-    colnames(IF) = c("umap1","umap2")
-    Stack$umap11 <- IF[Stack$row,"umap1"]
-    Stack$umap12 <- IF[Stack$row,"umap2"]
-    Stack$umap21 <- IF[Stack$col,"umap1"]
-    Stack$umap22 <- IF[Stack$col,"umap2"]
-
-  } else {
-
-    IFump=umap::umap(IF0)$layout
-    colnames(IFump) = c("umap1","umap2")
-    Stack$umap11 <- IFump[Stack$row,"umap1"]
-    Stack$umap12 <- IFump[Stack$row,"umap2"]
-    Stack$umap21 <- IFump[Stack$col,"umap1"]
-    Stack$umap22 <- IFump[Stack$col,"umap2"]
-  }
-
-  # Plotting diagnostic measures
-  # Only plot 5000 edges.
-  if (length(table(Stack$pair)) > 5000) {
-    Stack_plot = filter(Stack, pair %in% sample(names(table(Stack$pair)),5000))
-  } else {
-    Stack_plot = Stack
-  }
-
-  pdf(file.path(output_path, 'Diagnose_Spatial.pdf'))
-  p = ggplot(Stack_plot,aes(x=x1,y=y1))+
-    geom_line(aes(group=pair,color=value,alpha=value))+
-    xlab("X")+
-    ylab("Y")+
-    ggtitle("Spatial")
-  print(p)
-  dev.off()
-
-  pdf(file.path(output_path, 'Diagnose_TSNE.pdf'))
-  p = ggplot(Stack_plot,aes(x=tsne11,y=tsne12)) +
-    geom_line(aes(group=pair
-                  ,color=value
-                  ,alpha=value))+
-    xlab("TSNE1")+
-    ylab("TSNE2")+
-    ggtitle("TSNE")
-  print(p)
-  dev.off()
-
-  pdf(file.path(output_path, 'Diagnose_UMAP.pdf'))
-  p = ggplot(Stack_plot,aes(x=umap11,y=umap12)) +
-    geom_line(aes(group=pair
-                  ,color=value
-                  ,alpha=value))+
-    xlab("UMAP1")+
-    ylab("UMAP2")+
-    ggtitle("UMAP")
-  print(p)
-  dev.off()
-}
-
-########## End of diagnose part ########
