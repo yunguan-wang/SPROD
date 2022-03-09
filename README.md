@@ -157,7 +157,7 @@ A few additional notes for the parameters:
 
 `--warm_start` or `-ws` : This is helpful if image features were extracted in a previous run and a new run is desired with new parameter sets only for the denoising steps. Sprod will automatically look for the needed files in the input directory. 
 
-#### Note: In warm start mode, if the input folder contains both real image features and pseudo image features, sprod will only use real image features. If you want to run sprod using the pseudo image features, please remove the real image features named `[spot/block]_level_[intensity/texture]_features.csv`.
+#### Note: In warm start mode, the input folder must contains either the real image features or the pseudo image features. The real image features should be named as  `[spot/block]_level_[intensity/texture]_features.csv`, and the pseudo image features should be called `pseudo_image_features.csv`. If both sets of features exist, Sprod will only use the real image features.
 
 ## Example applications
 ### Application on Visium
