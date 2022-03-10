@@ -286,7 +286,7 @@ if (diagnose) {
   dist_ump=sapply(data.frame(ump), function(x){dist(rbind(x[1:2],x[3:4]))})
   
   dist_out=sapply(list(dist_spa,dist_tsn,dist_ump), mean,na.rm=T)
-  cat(paste("Sum of distance: \n-spatial:",dist_out[1],
+  cat(paste("Average distance: \n-spatial:",dist_out[1],
             "\n-image tsne:",dist_out[2],
             "\n-image umap:",dist_out[3],"\n\n"))
   
