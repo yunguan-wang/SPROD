@@ -36,7 +36,7 @@ option_list = list(
               default = 1,type = 'double',
               help="# regularizer, tunable"),
   make_option(c("-t", "--L_E"), action="store",
-              default=0.625,type = 'double',
+              default=0.4,type = 'double',
               help="regularizer for denoising"),
   make_option(c("-m", "--margin"), action="store",
               default = 0.001,type = 'double',
@@ -52,7 +52,10 @@ option_list = list(
               help="Output path"),
   make_option(c("-p", "--projectID"), action="store",
               default=NA, type = 'character',
-              help="# project name, First part of names in the output")
+              help="project name, First part of names in the output"),
+  make_option(c("-q", "--TopN"), action="store",
+              default=1000, type = 'double',
+              help="Number of edges selected, only used when diagnose mode is on.")
   )
 opt = parse_args(OptionParser(option_list=option_list))
 
@@ -74,8 +77,9 @@ script_path=opt$scriptPath # path to the software folder
 output_path=opt$outputPath # output path
 diagnose=opt$diagnose
 project_name=opt$projectID
+TopN=opt$TopN
 
-cat(paste("N_PC:",N_PC,"umap",um,"R_ratio:",R_ratio,"U:",U,"K",K,"LAMBDA:",LAMBDA,"L_E",L_E,"margin:",margin,"W_diag",d,"project ID:",project_name))
+cat(paste("N_PC:",N_PC,"umap",um,"R_ratio:",R_ratio,"U:",U,"K",K,"LAMBDA:",LAMBDA,"L_E:",L_E,"margin:",margin,"W_diag:",d,"project ID:",project_name,"diagnose mode on:",diagnose,"TopN:",TopN))
 cat("\n\n")
 
 source(file.path(script_path,"bisection/bisection.R"))
@@ -160,8 +164,9 @@ if (!all(complete.cases(p_n_n))){
 p_nn_tsne=1-(p_n_n + t(p_n_n))/2
 p_nn_tsne=p_nn_tsne^(dim(IF)[1]/Power_tsne_factor)
 # p_nn_tsne could have null values using simulated data.
-try(if(!all(complete.cases(p_nn_tsne))) 
-  stop("Error: Latent space proximity matrix contains Nan!\n"))
+{
+  if(!all(complete.cases(p_nn_tsne))) 
+  stop("Error: Latent space proximity matrix contains Nan!\n")
 
 # Build a graph based on image features and spot closeness
 while (1==1) {
@@ -185,7 +190,6 @@ ALPHA=ALPHA+t(ALPHA)
 # Denoise expression matrix based on the graph
 G = ALPHA/1
 rownames(G)=colnames(G)=rownames(E)
-#####MARK HERE: if dryrun, output of distance can be inserted here!!!########
 #######WetRun Going on below#######
 W = solve(diag(1, dim(G)[1]) + L_E * (diag(rowSums(G)) - G))
 if (d) {
@@ -212,12 +216,14 @@ decomposition=eigen(tmp %*% Q_inv %*% tmp)
 Y=decomposition$vectors %*% diag(decomposition$values)^0.5
 Y=Y[,1:K]
 proc.time() - ptm
-
+}
 ########## The following is only executed with diagnose mode on ##########
 if (diagnose) {
+  cat("Diagnose mode is on, calculating diagnostic measures...\n\n")
   # only needed for diagnose mode
   #######Output sum of dist#######
   Stack <- data.frame(S4Vectors::stack(G))
+  Stack <- Stack[which(Stack$value>0),]
   Stack$x1 <- C[Stack$row,"X"]
   Stack$y1 <- C[Stack$row,"Y"]
   Stack$x2 <- C[Stack$col,"X"]
@@ -227,7 +233,7 @@ if (diagnose) {
     Stack$z2 <- C[Stack$col,"Z"]
   }
   ## Generate the t_SNE plot
-  
+  set.seed(0)
   tsne <- Rtsne::Rtsne(IF0,check_duplicates = FALSE)
   rownames(tsne$Y)= rownames(IF0)
   colnames(tsne$Y) = c("tsne1","tsne2")
@@ -254,9 +260,15 @@ if (diagnose) {
   }
   
   Stack$rk = rank(Stack$value,ties.method = "random")
+  if (nrow(Stack)>=TopN){
+    TopN = TopN
+  }else{
+      TopN = nrow(Stack)
+      cat("Number of edges is smaller than TopN, and all edges are included!\n")
+    }
   Stack %>%
     arrange(desc(rk)) %>%
-    head(1000) -> Stack_top
+    head(TopN) -> Stack_top
   head(Stack_top)
   if ("Z" %in% colnames(C)){
     spa = t(Stack_top[,c("x1","y1","z1","x2","y2","z2")])
@@ -273,15 +285,13 @@ if (diagnose) {
   dist_tsn=sapply(data.frame(tsn), function(x){dist(rbind(x[1:2],x[3:4]))})
   dist_ump=sapply(data.frame(ump), function(x){dist(rbind(x[1:2],x[3:4]))})
   
-  dist_out=sapply(list(dist_spa,dist_tsn,dist_ump), sum,na.rm=T)
+  dist_out=sapply(list(dist_spa,dist_tsn,dist_ump), mean,na.rm=T)
   cat(paste("Sum of distance: \n-spatial:",dist_out[1],
             "\n-image tsne:",dist_out[2],
             "\n-image umap:",dist_out[3],"\n\n"))
   
   # Prepare for diagnostic figures
   library(ggplot2)
-  cat("Diagnose mode is on, calculating diagnostic measures...\n\n")
-  Stack <- Stack[which(Stack$value>0),]
   cellNames= data.frame(t(Stack[,1:2]))
   Stack$pair = sapply(cellNames,function(x) {paste0(sort(x)[1],sort(x)[2])})
   
