@@ -1,4 +1,12 @@
 """
+This is a demo function for very basic grid search style parameter selction.
+By default a 3 X 3 X 3 paramater space is searched and the Sprod performance is 
+prioritized based on the qualities of the constructed latent graph. Parameter sets
+that preserve the overall spot physical struction and image similarity better will 
+bet ranked higher.
+The running time of this small search space is a few hours on a normal PC.
+You can modify this scipt to your need.
+
 usage: parameter_selection_demo.py [-h] [--input_Rs INPUT_RS]
                                    [--input_K INPUT_K]
                                    [--input_Lambda INPUT_LAMBDA]
@@ -29,6 +37,7 @@ optional arguments:
 import os
 import argparse
 import pandas as pd
+import numpy as np
 import random
 from multiprocessing import Pool
 from scipy.spatial.distance import cdist
@@ -47,6 +56,10 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "input_path", type=str, help="Input folder containing all necessary files."
+    )
+
+    parser.add_argument(
+        "output_path", type=str, help="Output folder."
     )
 
     parser.add_argument(
@@ -78,21 +91,25 @@ if __name__ == "__main__":
         "-p",
         default=4,
         type=int,
-        help="Input RLambdas, a string separated by ','.",
+        help="Number of sprod jobs running at the same time. ",
     )
 
     args = parser.parse_args()
     input_path = os.path.abspath(args.input_path)
-    num_process = args.num_process
+    output_path = os.path.abspath(args.output_path)
     Rs = args.input_Rs.split(',')
     Ks = args.input_K.split(',')
     Ls = args.input_Lambda.split(',')
+    num_process = args.num_process
 
     # getting script path for supporting codes.
+    np.random.seed(0)
     script_path = os.path.abspath(__file__)
     sprod_path = script_path.replace('parameter_selection_demo.py', 'sprod')
     sprodpy_path = script_path.replace('parameter_selection_demo', 'sprod')
     sprodR_path = os.path.join(sprod_path, "denoise.R")
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
 
     # Determine if downsampling is needed
     cts_fn = os.path.join(input_path, "Counts.txt")
@@ -100,10 +117,12 @@ if __name__ == "__main__":
     metadata_fn = os.path.join(input_path, "Spot_metadata.csv")
     # IMPORTANT!!!
     # The above three files must have the same order in the rows.
+    # If the input is very big, will only run the sprod param demo on a random 
+    # 5000 spots
     n_spots = sum(1 for _ in open(cts_fn))
     if n_spots > 10000:
         print('These is more than 10000 spots. Random sample only 5000.')
-        subsamples = 5000 - 1
+        subsamples = 5000
         sub_idx = random.sample(range(1,n_spots), subsamples)
         sub_idx.append(0)
         sub_idx = sorted(sub_idx)
@@ -123,15 +142,16 @@ if __name__ == "__main__":
                     s_f.write(line)
         input_path = subsampled_input
 
+    # Preparing the Sprod jobs
     cmd_list = []
     for R in Rs:
         for K in Ks:
             for L in Ls:
                 output_path = os.path.join(
                     os.path.abspath('.'), 'R-{}_K-{}_L-{}'.format(R,K,L))
-                if os.path.exists(
-                    os.path.join(output_path, 'Sprod_denoised_matrix.txt')):
-                    continue
+                # if os.path.exists(
+                #     os.path.join(output_path, 'sprod_Denoised_matrix.txt')):
+                #     continue
                 cmd_list.append(
                     'python {sprodpy_path} {input_path} {output_path} -r {R} -k {K} -l {L} -ws -dg'.format(
                         sprodpy_path = sprodpy_path,
@@ -146,7 +166,8 @@ if __name__ == "__main__":
     with Pool(num_process) as p:
         p.map(worker, cmd_list)
 
-    # processing results
+    # processing results, merging PDFs, this process is optionl
+    # Will be skipped if the required packages are not found.
     try:
         from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
         import io
@@ -190,47 +211,8 @@ if __name__ == "__main__":
     except:
         print('PyPDF2 package is not found, abort pdf merging')
     
-    # Processing raw counts
-    cpm = pd.read_csv(
-        os.path.join(input_path, 'Counts.txt'), sep='\t', index_col=0)
-    # raw_cts = pd.read_csv(
-    #     os.path.join(input_path, 'Counts.txt'), sep='\t', index_col=0)
-    # n_counts = raw_cts.sum(axis=1)
-    # cpm = raw_cts.apply(lambda x: 1e6*x/x.sum(), axis=1)
-    # cpm = np.log2(1+cpm)
-    # rpl_mt_genes = [x for x in cpm.columns if x[:3].lower() in ['rpl', 'rps', 'mt-']]
-    # cpm = cpm.drop(rpl_mt_genes, axis=1)
-    # Evaluating correlation improvement
-    n_top_exp_genes = 25
-    n_top_cor_genges = 100
-    n_top_corrs = 500
-    top_expressed_genes = cpm.median().sort_values(ascending=False)
-    top_expressed_genes = top_expressed_genes.index[:n_top_exp_genes]
-    corr_matrix = pd.DataFrame(
-        1- cdist(
-            cpm[top_expressed_genes].T, cpm.drop(top_expressed_genes, axis=1).T,
-            metric='correlation'),
-        index = top_expressed_genes,
-        columns = [x for x in cpm.columns if x not in top_expressed_genes]
-    )
-    corr_matrix = corr_matrix.dropna(axis=1)
-    top_corr = corr_matrix.median().sort_values(ascending=False)[:n_top_cor_genges]
-    bot_corr = corr_matrix.median().sort_values(ascending=False)[-n_top_cor_genges:]
-    top_corr = top_corr[top_corr>0].index.tolist()
-    bot_corr = bot_corr[bot_corr<0].index.tolist()
-    top_cor_genes = top_corr + bot_corr
-    corr_matrix = corr_matrix[top_cor_genes].stack().reset_index()
-    corr_matrix['id'] = corr_matrix.level_0 + '_' + corr_matrix.level_1
-    corr_matrix = corr_matrix.set_index('id').iloc[:,2]
-    corr_matrix = corr_matrix.sort_values(ascending=False)
-    pos_cors = corr_matrix[corr_matrix>0][:n_top_corrs]
-    neg_cors = corr_matrix[corr_matrix<0][-n_top_corrs:]
-
-    # get list of denoised counts
+    # getting R spatial correlations
     denoised_cts_list = []
-    collist = top_expressed_genes.tolist() + top_cor_genes
-    collist_R = [x.replace('-','.') for x in collist] # fix for R messing up colnames
-    gene_name_mapping = pd.Series(collist, index = collist_R)
     for dir in os.listdir():
         if not os.path.isdir(dir):
             continue
@@ -238,51 +220,48 @@ if __name__ == "__main__":
         if 'sprod_Denoised_matrix.txt' in dir_files:
             denoised_cts_list.append(
                 os.path.join(dir, 'sprod_Denoised_matrix.txt'))
-    # Calculate correlations
     df_improvements = pd.DataFrame(
         index = [x.split('/')[0] for x in denoised_cts_list],
-        columns = ['Pos_cor_improve', 'neg_cor_improve']
     )
-    print('Estimating correlation improvement based on top 1000 correlated gene pairs.')
-    for denoised_cts_fn in denoised_cts_list:
-        print('Processing {}'.format(denoised_cts_fn))
-        denoised_cpm = pd.read_csv(
-            denoised_cts_fn, usecols=collist_R, sep='\t', index_col=0)
-        # denoised_cts = pd.read_csv(
-        #     denoised_cts_fn, usecols=collist_R, sep='\t', index_col=0)
-        # denoised_cpm = denoised_cts.apply(lambda x: 1e6*x/n_counts[x.name], axis=1)
-        # denoised_cpm = np.log2(denoised_cpm+1)
-        denoised_cpm.columns = gene_name_mapping[denoised_cpm.columns].values
-        denoised_corr = pd.DataFrame(
-            1- cdist(
-                denoised_cpm[top_expressed_genes].T, denoised_cpm[top_cor_genes].T,
-                metric='correlation'),
-            index = top_expressed_genes,
-            columns = top_cor_genes
-            ).stack().reset_index()
-        denoised_corr['id'] = denoised_corr.level_0 + '_' + denoised_corr.level_1
-        denoised_corr = denoised_corr.set_index('id').iloc[:,2]
-        improves = [
-            (denoised_corr[pos_cors.index] - pos_cors).mean(),
-            (neg_cors - denoised_corr[neg_cors.index]).mean()
-        ]
-        df_improvements.loc[denoised_cts_fn.split('/')[0]] = improves
+    meta = pd.read_csv(
+        input_path + '/Spot_metadata.csv', index_col=0
+    )
+    spot_dist = pd.DataFrame(
+        cdist(meta[['X','Y']],meta[['X','Y']]), index = meta.index,
+        columns = meta.index
+    )
+    spot_dist = spot_dist.stack()
+    for dir in os.listdir():
+        if not os.path.isdir(dir):
+            continue
+        dir_files = os.listdir(dir)
+        if 'sprod_Detected_graph.txt' in dir_files:
+            graph = pd.read_csv(
+                os.path.join(dir, 'sprod_Detected_graph.txt'), 
+                sep='\t', index_col=0)
+            graph = graph.stack()
+            graph = graph[graph>0]
+            graph_dist = spot_dist.loc[graph.index]
+            df_improvements.loc[
+                dir,'Average Graph Distance'] = graph_dist.mean()
+        if 'sprod_log.txt' in dir_files:
+            with open(os.path.join(dir,'sprod_log.txt')) as f:
+                for line in f:
+                    if line[:8] == '-spatial':
+                        spatial_v = float(line.strip('\n').split(':')[1])
+                    #     df_improvements.loc[
+                    #         dir,'Mean distance of top ranked edges'] = spatial_v
+                    elif line.split(':')[0] == '-image tsne':
+                        tsne_v = float(line.strip('\n').split(':')[1])
+                        df_improvements.loc[
+                            dir,'Average Image Distance'] = tsne_v
+    rank1 = pd.Series(
+        list(range(1, 1 + df_improvements.shape[0])),
+        index = df_improvements.sort_values('Average Graph Distance').index)
+    rank2 = pd.Series(
+        list(range(1, 1 + df_improvements.shape[0])),
+        index = df_improvements.sort_values(
+            'Average Image Distance').index)
+    df_improvements['Rank'] = (rank1 + rank2)/2
+    df_improvements = df_improvements.sort_values('Rank')
     df_improvements.to_csv('Correlation_improvement.csv')
-    
-    # Plotting
-    try:
-        import seaborn as sns
-        df_improvements['Correlation_improvement'] = df_improvements.sum(axis=1)
-        df_improvements = df_improvements.sort_values('Correlation_improvement')
-        plt = sns.mpl.pyplot
-        _ = plt.figure(figsize=(8,6))
-        sns.lineplot(
-            data = df_improvements,
-            x = [x.replace('_',' ').replace('-',': ') for x in df_improvements.index],
-            y='Correlation_improvement')
-        _ = plt.xticks(rotation=45, ha = 'right', va = 'top')
-        plt.tight_layout()
-        plt.savefig('Correlation_improvement.pdf')
-        plt.close()
-    except:
-        print('Seaborn is not found, abort plooting.')
