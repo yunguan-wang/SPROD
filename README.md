@@ -157,6 +157,8 @@ A few additional notes for the parameters:
 
 `--warm_start` or `-ws` : This is helpful if image features were extracted in a previous run and a new run is desired with new parameter sets only for the denoising steps. Sprod will automatically look for the needed files in the input directory. 
 
+We have included a demo script for grid search style parameter selction in `parameter_selection_demo.py`. By default a 3 X 3 X 3 paramater space is searched and the Sprod performance is prioritized based on the qualities of the constructed latent graph. Parameter sets that preserve the overall spot physical struction and image similarity better will bet ranked higher.
+
 #### Note: In warm start mode, the input folder must contains either the real image features or the pseudo image features. The real image features should be named as  `[spot/block]_level_[intensity/texture]_features.csv`, and the pseudo image features should be called `pseudo_image_features.csv`. If both sets of features exist, Sprod will only use the real image features.
 
 ## Example applications
