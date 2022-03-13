@@ -93,9 +93,9 @@ if __name__ == "__main__":
         "-y",
         default="single",
         type=str,
-        help="The input type decides the running mode for sprod, select from {'single','patches'}. \
+        help="The input type decides the running mode for sprod, select from {'single','batch'}. \
             For smaller datasets, such as Visium, use 'single' mode. For larger datasets such as \
-            Slide-seq, use 'patches' mode",
+            Slide-seq, use 'batch' mode",
     )
 
     parser.add_argument(
@@ -189,7 +189,7 @@ if __name__ == "__main__":
         default=False,
         action="store_true",
         help="Toggle for warm start, which will skip all preprocessing steps \
-            including feature extraction and patch-making.",
+            including feature extraction and all prep steps in the batch mode.",
     )
 
     parser.add_argument(
@@ -201,19 +201,11 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--num_of_patches",
-        "-pn",
-        type=int,
-        default=10,
-        help="Number of subsampled patches. Only works when --input_type is patches.",
-    )
-
-    parser.add_argument(
         "--num_of_batches",
         "-pb",
         type=int,
         default=10,
-        help="How many times subsampling is ran. Only works when --input_type is patches.",
+        help="How many times subsampling is ran. Only works when --input_type is 'batch'.",
     )
 
     parser.add_argument(
@@ -242,7 +234,6 @@ if __name__ == "__main__":
     sprod_diagnose = args.diag_mode
     image_feature_type = args.image_feature_type
     img_type = args.img_type
-    # pn = args.num_of_patches
     pb = args.num_of_batches
     os_type = platform.system()
 
@@ -306,9 +297,9 @@ if __name__ == "__main__":
             )
             raise ValueError()
 
-        # When the input_type is patches, will run subsampling process.
-        if input_type == "patches":
-            logging.info("Making subsample patches from counts data.")
+        # When the input_type is batch, will run subsampling process.
+        if input_type == "batch":
+            logging.info("Making subsamples from counts data.")
             intermediate_path = os.path.join(output_path, "intermediate")
             feature_fn = os.path.join(
                 input_path,
@@ -328,13 +319,13 @@ if __name__ == "__main__":
         elif input_type == "single":
             pass
         else:
-            logging.error("Input type must be single or patches")
+            logging.error("Input type must be single or batch")
             raise ValueError()
 
     # Sprod denoising
     logging.info("Proceed to Sprod denoising.")
-    if input_type == "patches":
-        logging.info("Sprod-ready data format is patches")
+    if input_type == "batch":
+        logging.info("Sprod-ready data format is batch")
         counts = [x for x in os.listdir(input_path) if "Counts" in x]
         patches = [x.replace("_Counts.txt", "") for x in counts]
         inputs = []
@@ -348,7 +339,7 @@ if __name__ == "__main__":
                 == os.path.exists(feature_fn)
                 == True
             ):
-                logging.error("At least one patch failed. Please check the output folder.")
+                logging.error("At least one subsample failed. Please check the output folder.")
                 raise ValueError()
             inputs.append([cts_fn, meta_fn, feature_fn])
     else:
@@ -381,7 +372,7 @@ if __name__ == "__main__":
     list_sprod_cmds = []
     for sprod_job in inputs:
         cts_fn, meta_fn, feature_fn = [os.path.abspath(x) for x in sprod_job]
-        if input_type == "patches":
+        if input_type == "batch":
             patch_name = cts_fn.split(os.sep)[-1].replace("_Counts.txt", "")
         else:
             patch_name = output_prefix
@@ -439,8 +430,8 @@ if __name__ == "__main__":
         with Pool(16) as p:
             _ = p.map(sprod_worker, list_sprod_cmds)
 
-    # last step, stiching all patches back.
-    if input_type == "patches":
+    # last step, stiching all subsamples back.
+    if input_type == "batch":
         stiching_script_path = os.path.join(sprod_path, "slide_seq_stiching.py")
         stiching_subsampled_patches(
             output_path, os.path.join(output_path, "denoised_stiched.hdf")

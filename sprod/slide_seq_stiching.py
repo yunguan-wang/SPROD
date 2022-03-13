@@ -7,7 +7,7 @@ import numpy as np
 def stiching_denoised_patches(input_path, output_fn = None):
     cts_files = sorted([x for x in os.listdir(input_path) if 'Counts.txt' in x])
     denoised_fns = sorted([x for x in os.listdir(input_path) if 'denoised' in x])
-    assert(len(cts_files) == len(denoised_fns)), 'Slideseq patch data not properly denoised'
+    assert(len(cts_files) == len(denoised_fns)), 'Slideseq subsampled data not properly denoised'
 
     denoised_mtx = pd.DataFrame()
     for cts_fn in cts_files:

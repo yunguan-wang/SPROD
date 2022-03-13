@@ -32,7 +32,7 @@ Three tests were included in this testing script covering different use cases.
 
 `single_with_img` is for use cases where a small dataset with matching tif image is present. The data is processed in one run.
 
-`batch_with_img` is for use cases where a big dataset with matching tif image is present. The data is processed in small subsampled patches.
+`batch_with_img` is for use cases where a big dataset with matching tif image is present. The data is processed in small subsampled runs.
 
 `single_pseudoimage` is for use cases where matching image is not avalable. Cluster probablities of each spot is used as features for sprod.
 
@@ -47,8 +47,8 @@ Removing previous testing results...Done!
 Testing Sprod in single mode
 Sprod test single mode succeeded!
 ...
-Testing Sprod in patches mode
-Sprod test patches mode succeeded!
+Testing Sprod in batch mode
+Sprod test batch mode succeeded!
 ...
 Testing Sprod in single, pseudoimage mode
 Sprod test single pseudoimage mode succeeded!
@@ -93,7 +93,7 @@ We have included a `data_preprocessing.py` script in this repo for processing ra
 Feature extraction (with matching image) or generation (without matching image) is wrapped up in the `sprod.py` script. The feature extraction process is carried out automatically on the fly, and the details are also summerized briefly in below.
 
 #### Dataset with a matching image
-Sprod works best when the spatial dataset contains a matching image (such as 10X Visium). For this type of datasets, Sprod will extract image features using the [extract_img_features](https://github.com/yunguan-wang/SPROD/blob/master/sprod/feature_extraction.py#L29) function, which will look at image patches around each spot and extract intensity and texture features. The shape of the image patch can be specified using the `--feature_mask_shape` parameter. For Dataset in which sequencing spots, the region of interest can be the exact sequencing spot ('spot'), or a rectangular box surrounding each spot ('block). 
+Sprod works best when the spatial dataset contains a matching image (such as 10X Visium). For this type of datasets, Sprod will extract image features using the [extract_img_features](https://github.com/yunguan-wang/SPROD/blob/master/sprod/feature_extraction.py#L29) function, which will look at image regions around each spot and extract intensity and texture features. The shape of the image region can be specified using the `--feature_mask_shape` parameter. For Dataset in which sequencing spots, the region of interest can be the exact sequencing spot ('spot'), or a rectangular box surrounding each spot ('block). 
 
 Note: for block mask shape, the `Row` and `Col` columns must be present in the `Spot_metadata.csv` file.
 
@@ -101,7 +101,7 @@ Note: for block mask shape, the `Row` and `Col` columns must be present in the `
 Sometimes the ST dataset does not have a matching image, such as those from the Slide-Seq platform and a Visium dataset without high-resolution image. In this case, Sprod will apply soft clustering on the spots based on gene expression and will use the cluster identities/probabilities as the input features for denoising, which we call pseudo-image features. Sprod does this through calling the [make_pseudo_img](https://github.com/yunguan-wang/SPROD/blob/master/sprod/pseudo_image_gen.py#L71) function.
 
 ### Handling very big spatial dataset
-Sprod works well with datasets of thousands of sequencing spots/beads. However, for large datasets with tens of thousands of spots/beads, special operations must be performed so that Sprod can run smoothly. Srpod employs a splitting-stitching scheme to facilitate large dataset processing. Each Slide-seq dataset is randomly (not dependent on spatial location) divided into n (10 by default) equal-sized subsets, and this process is repeated b (10 by default) times. Then, Sprod denoising is performed on each of the n * b subsets and the denoised results are concatenated. Each spot is exactly denoised b times, and the concatenated denoised data from the n sampling batches are averaged so that the randomness resulting from the sub-sampling procedure is averaged out. In the mode of "patches", the computational time is linearly relative to the number of sequncing spots/cells. 
+Sprod works well with datasets of thousands of sequencing spots/beads. However, for large datasets with tens of thousands of spots/beads, special operations must be performed so that Sprod can run smoothly. Srpod employs a splitting-stitching scheme to facilitate large dataset processing. Each Slide-seq dataset is randomly (not dependent on spatial location) divided into n (10 by default) equal-sized subsets, and this process is repeated b (10 by default) times. Then, Sprod denoising is performed on each of the n * b subsets and the denoised results are concatenated. Each spot is exactly denoised b times, and the concatenated denoised data from the n sampling batches are averaged so that the randomness resulting from the sub-sampling procedure is averaged out. In the `batch` mode, the computational time is linearly proportional to the total number of sequncing spots/cells. 
 
 <img src = "https://github.com/yunguan-wang/SPROD/blob/QBRC_SS/img/TimexSpots.png" height="450" width="500">
 
@@ -117,7 +117,7 @@ optional arguments:
   --help, -h            
                         show this help message and exit.
   --input_type, -y      
-                        The input type decides the running mode for sprod, select from {'single','patches'}. (default: single)
+                        The input type decides the running mode for sprod, select from {'single','batch'}. (default: single)
   --output_prefix, -p   
                         Output prefix used in the output. (default: sprod)
   --sprod_npc, -sn      
@@ -142,18 +142,16 @@ optional arguments:
                         Type of feature extracted. combination from {'spot', 'block'} and {'intensity', 'texture'} with '_' as
                         delimiter. Only relevant if the input dataset contains an matching tif image. (default: spot_intensity)
   --warm_start, -ws     
-                        Toggle for warm start, which will skip all preprocessing steps including feature extraction and patch-making. (default: False)
-  --num_of_patches, -pn
-                        Number of subsampled patches. Only works when --input_type is patches. (default: 10)
+                        Toggle for warm start, which will skip all preprocessing steps in feature extraction and batch mode prep. (default: False)
   --num_of_batches, -pb
-                        How many times subsampling is ran. Only works when --input_type is patches. (default: 10)
+                        How many times subsampling is ran. Only works when --input_type is batch. (default: 10)
   -ci, --img_type
                         Input image type. {'he', 'if'}. The 'if' mode is only tested on Visium-assocaited data. (default: he)
 ```
 
 A few additional notes for the parameters:
 
-`--type` or `-y` : For small datasets with a few thousands spots, this should be set to `single`, while for larger datasets with tens of thousands of spots, this should be set to `patches` to let Sprod run on subsampled patches in parallell to avoid memory problems.
+`--type` or `-y` : For small datasets with a few thousands spots, this should be set to `single`, while for larger datasets with tens of thousands of spots, this should be set to `batch` to let Sprod run on subsamples in parallell to avoid memory problems.
 
 `--warm_start` or `-ws` : This is helpful if image features were extracted in a previous run and a new run is desired with new parameter sets only for the denoising steps. Sprod will automatically look for the needed files in the input directory. 
 

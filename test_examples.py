@@ -38,16 +38,16 @@ try:
 except FileNotFoundError:
     print('Sprod denoise job failed: no output found, please check sprod_log.txt.')
 
-print('Testing Sprod in patches mode')
+print('Testing Sprod in batch mode')
 os.system(
-    'python {} -y patches -pn 2 -pb 2 {} {}/batch_with_img -ci if'.format(denoise_jb, input_path, test_path))
+    'python {} -y batch -pn 2 -pb 2 {} {}/batch_with_img -ci if'.format(denoise_jb, input_path, test_path))
 try:
     test_denoised = pd.read_hdf(os.path.join(test_path,'batch_with_img/denoised_stiched.hdf'))
     ref_denoised = pd.read_hdf(os.path.join(output_path,'batch_with_img/denoised_stiched.hdf'))
     if (test_denoised - ref_denoised).sum().sum() <= 100:
-        print('Sprod test patches mode succeeded!')
+        print('Sprod test batch mode succeeded!')
     else:
-        print('Sprod test patches mode was able to run, but the results were not expected. Please check if the input files match those in the repo.')
+        print('Sprod test batch mode was able to run, but the results were not expected. Please check if the input files match those in the repo.')
 except FileNotFoundError:
     print('Sprod denoise job failed: no output found, please check sprod_log.txt.')
 

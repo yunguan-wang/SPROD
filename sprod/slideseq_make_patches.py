@@ -10,7 +10,7 @@ def mpl_writer(patch):
     patch_meta = patch[2]
     patch_cts = patch[3]
     patch_f = patch[4]
-    print('Processing patch {}'.format(patch_name))
+    print('Processing subsample {}'.format(patch_name))
     patch_cts.to_csv(
         os.path.join(output_path, patch_name + '_Counts.txt'),sep='\t')
     # check if there is i/o error
@@ -20,7 +20,7 @@ def mpl_writer(patch):
     n = 0
     while not (patch_cts.index == _cts.index).all():
         if n > 5:
-            print('Persistant I/O error in patch {}'.format(patch_name))
+            print('Persistant I/O error in subsample {}'.format(patch_name))
             break
         patch_cts.to_csv(
             os.path.join(output_path, patch_name + '_Counts.txt'),sep='\t')
@@ -88,7 +88,7 @@ def make_patches(input_path, margin, patch_scale,output_path):
 
 def subsample_patches(input_path, output_path, feature_fn = None, n_patches = 10, number_batches = 10):
     """
-    sample counts into 1/n_patches size patches. By default this is done number_batches times, \
+    sample counts 5000-spot subsamples, which is called as a patch. By default this is done number_batches times, \
     making n_patches*number_batches patches where each cell is represented number_batches times.
     """
     spot_meta = pd.read_csv(
