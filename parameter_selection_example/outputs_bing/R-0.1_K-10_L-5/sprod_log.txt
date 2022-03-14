@@ -1,0 +1,55 @@
+17:45:25,INFO:::Proceed to Sprod denoising.
+17:45:25,INFO:::Sprod-ready data format is single.
+17:45:25,INFO:::Total number of sprod jobs : 1
+17:45:25,INFO:::['Rscript', '/project/shared/xiao_wang/projects/MOCCA/code/Spatial_denoise/sprod/denoise.R', '-e', '/project/shared/xiao_wang/projects/MOCCA/data/revision/ParaImpro/input/Counts.txt', '-c', '/project/shared/xiao_wang/projects/MOCCA/data/revision/ParaImpro/input/Spot_metadata.csv', '-f', '/project/shared/xiao_wang/projects/MOCCA/data/revision/ParaImpro/input/spot_level_intensity_features.csv', '-n', '-1', '-r', '0.1', '-u', '250', '-k', '10', '-l', '5.0', '-t', '0.4', '-m', '0.001', '-s', '/project/shared/xiao_wang/projects/MOCCA/code/Spatial_denoise/sprod', '-o', '/project/shared/xiao_wang/projects/MOCCA/data/revision/ParaImpro/R-0.1_K-10_L-5', '-p', 'sprod', '-g']
+WARNING: ignoring environment value of R_HOME
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MESSAGES failed, using "C" 
+5: Setting LC_MONETARY failed, using "C" 
+6: Setting LC_PAPER failed, using "C" 
+7: Setting LC_MEASUREMENT failed, using "C" 
+N_PC: -1 umap FALSE R_ratio: 0.1 U: 250 K 10 LAMBDA: 5 L_E: 0.4 margin: 0.001 W_diag: FALSE project ID: sprod diagnose mode on: TRUE TopN: 1000
+
+Inputing...
+
+XY columns are detected but not Z!
+Constructing latent graph based on position and image features...
+
+P
+   FALSE     TRUE 
+14015472   409332 
+Image features preprocessing: PCA...
+
+Top 5 rows of input image features:
+
+                           PC1       PC2
+CACGATTGGTCGTTAA-1  0.05737719  4.627416
+GGTTGTATCGTGAAAT-1 -0.20787477  2.892595
+TCTTATGGGTAGTACC-1 -0.96718300  5.348940
+TACAAGCTGTTCACTG-1 -1.93922998 -2.456753
+GTATCTTGTTGCTCAC-1 -1.12869755  4.412042
+
+
+final  value -46525.861967 
+stopped after 2 iterations
+Graph construction succeeded.
+
+Number of non-zero edges: 
+Retrieving the embedding space...
+
+   user  system elapsed 
+876.300  80.548 323.648 
+Diagnose mode is on, calculating diagnostic measures...
+
+Sum of distance: 
+-spatial: 771.526481749221 
+-image tsne: 3.5166767390707 
+-image umap: 0.515437817303015 
+
+null device 
+          1 
+Saving outputs...
+

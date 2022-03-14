@@ -1,0 +1,55 @@
+18:23:45,INFO:::Proceed to Sprod denoising.
+18:23:45,INFO:::Sprod-ready data format is single.
+18:23:45,INFO:::Total number of sprod jobs : 1
+18:23:45,INFO:::['Rscript', '/project/shared/xiao_wang/projects/MOCCA/code/Spatial_denoise/sprod/denoise.R', '-e', '/project/shared/xiao_wang/projects/MOCCA/data/revision/ParaImpro/input/Counts.txt', '-c', '/project/shared/xiao_wang/projects/MOCCA/data/revision/ParaImpro/input/Spot_metadata.csv', '-f', '/project/shared/xiao_wang/projects/MOCCA/data/revision/ParaImpro/input/spot_level_intensity_features.csv', '-n', '-1', '-r', '0.15', '-u', '250', '-k', '10', '-l', '10.0', '-t', '0.4', '-m', '0.001', '-s', '/project/shared/xiao_wang/projects/MOCCA/code/Spatial_denoise/sprod', '-o', '/project/shared/xiao_wang/projects/MOCCA/data/revision/ParaImpro/R-0.15_K-10_L-10', '-p', 'sprod', '-g']
+WARNING: ignoring environment value of R_HOME
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MESSAGES failed, using "C" 
+5: Setting LC_MONETARY failed, using "C" 
+6: Setting LC_PAPER failed, using "C" 
+7: Setting LC_MEASUREMENT failed, using "C" 
+N_PC: -1 umap FALSE R_ratio: 0.15 U: 250 K 10 LAMBDA: 10 L_E: 0.4 margin: 0.001 W_diag: FALSE project ID: sprod diagnose mode on: TRUE TopN: 1000
+
+Inputing...
+
+XY columns are detected but not Z!
+Constructing latent graph based on position and image features...
+
+P
+   FALSE     TRUE 
+13520924   903880 
+Image features preprocessing: PCA...
+
+Top 5 rows of input image features:
+
+                           PC1       PC2
+CACGATTGGTCGTTAA-1  0.05737719  4.627416
+GGTTGTATCGTGAAAT-1 -0.20787477  2.892595
+TCTTATGGGTAGTACC-1 -0.96718300  5.348940
+TACAAGCTGTTCACTG-1 -1.93922998 -2.456753
+GTATCTTGTTGCTCAC-1 -1.12869755  4.412042
+
+
+final  value -47470.537579 
+stopped after 3 iterations
+Graph construction succeeded.
+
+Number of non-zero edges: 
+Retrieving the embedding space...
+
+   user  system elapsed 
+758.226  80.075 158.103 
+Diagnose mode is on, calculating diagnostic measures...
+
+Sum of distance: 
+-spatial: 981.397286032069 
+-image tsne: 2.96109379511479 
+-image umap: 0.407372043168232 
+
+null device 
+          1 
+Saving outputs...
+

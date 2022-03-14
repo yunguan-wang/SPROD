@@ -1,0 +1,67 @@
+18:17:53,INFO:::Proceed to Sprod denoising.
+18:17:53,INFO:::Sprod-ready data format is single.
+18:17:53,INFO:::Total number of sprod jobs : 1
+18:17:53,INFO:::['Rscript', '/project/shared/xiao_wang/projects/MOCCA/code/Spatial_denoise/sprod/denoise.R', '-e', '/project/shared/xiao_wang/projects/MOCCA/data/revision/ParaImpro/input/Counts.txt', '-c', '/project/shared/xiao_wang/projects/MOCCA/data/revision/ParaImpro/input/Spot_metadata.csv', '-f', '/project/shared/xiao_wang/projects/MOCCA/data/revision/ParaImpro/input/spot_level_intensity_features.csv', '-n', '-1', '-r', '0.15', '-u', '250', '-k', '5', '-l', '15.0', '-t', '0.4', '-m', '0.001', '-s', '/project/shared/xiao_wang/projects/MOCCA/code/Spatial_denoise/sprod', '-o', '/project/shared/xiao_wang/projects/MOCCA/data/revision/ParaImpro/R-0.15_K-5_L-15', '-p', 'sprod', '-g']
+WARNING: ignoring environment value of R_HOME
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MESSAGES failed, using "C" 
+5: Setting LC_MONETARY failed, using "C" 
+6: Setting LC_PAPER failed, using "C" 
+7: Setting LC_MEASUREMENT failed, using "C" 
+N_PC: -1 umap FALSE R_ratio: 0.15 U: 250 K 5 LAMBDA: 15 L_E: 0.4 margin: 0.001 W_diag: FALSE project ID: sprod diagnose mode on: TRUE TopN: 1000
+
+Inputing...
+
+XY columns are detected but not Z!
+Constructing latent graph based on position and image features...
+
+P
+   FALSE     TRUE 
+13520924   903880 
+Image features preprocessing: PCA...
+
+Top 5 rows of input image features:
+
+                           PC1       PC2
+CACGATTGGTCGTTAA-1  0.05737719  4.627416
+GGTTGTATCGTGAAAT-1 -0.20787477  2.892595
+TCTTATGGGTAGTACC-1 -0.96718300  5.348940
+TACAAGCTGTTCACTG-1 -1.93922998 -2.456753
+GTATCTTGTTGCTCAC-1 -1.12869755  4.412042
+
+
+iter   10 value -21614.583360
+iter   20 value -24443.722028
+iter   30 value -24484.975867
+iter   40 value -24568.763479
+iter   50 value -24640.008025
+iter   60 value -24691.304196
+iter   70 value -24763.998480
+iter   80 value -24870.484696
+iter   90 value -24987.520847
+iter  100 value -25050.733170
+final  value -25057.385547 
+stopped after 101 iterations
+Graph construction succeeded.
+
+Number of non-zero edges: 
+Retrieving the embedding space...
+
+    user   system  elapsed 
+2325.531  208.587  615.537 
+Warning message:
+Lambda may be set too large! 
+Diagnose mode is on, calculating diagnostic measures...
+
+Sum of distance: 
+-spatial: 1318.09618735866 
+-image tsne: 4.94132876412809 
+-image umap: 0.756201445132909 
+
+null device 
+          1 
+Saving outputs...
+

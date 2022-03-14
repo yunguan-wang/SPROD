@@ -30,8 +30,10 @@ optional arguments:
                         Input RLambdas, a string separated by ','. (default:
                         5,10,15)
   --num_process NUM_PROCESS, -p NUM_PROCESS
-                        Input RLambdas, a string separated by ','. (default:
+                        Number of sprod jobs running at the same time. (default:
                         4)
+  --overwrite, -o       Whether to overwrite old outputs with the same
+                        parameter combo. (default: False)
 
 """
 import os
@@ -45,6 +47,12 @@ from scipy.spatial.distance import cdist
 def worker(cmd):
     print(cmd)
     os.system(cmd)
+    output_path = cmd.split(' ')[3]
+    # Remove sprod denoised outputs as those are not needed.
+    os.system(
+        'rm {}/sprod_Denoised_matrix.txt {}/sprod_Detected_graph.txt {}/sprod_Latent_space.txt'.format(
+            output_path, output_path, output_path
+        ))
 
 
 if __name__ == "__main__":
@@ -94,6 +102,14 @@ if __name__ == "__main__":
         help="Number of sprod jobs running at the same time. ",
     )
 
+    parser.add_argument(
+        "--overwrite",
+        "-o",
+        default=False,
+        action="store_true",
+        help="Whether to overwrite old outputs with the same parameter combo. ",
+    )
+
     args = parser.parse_args()
     input_path = os.path.abspath(args.input_path)
     output_path = os.path.abspath(args.output_path)
@@ -101,6 +117,7 @@ if __name__ == "__main__":
     Ks = args.input_K.split(',')
     Ls = args.input_Lambda.split(',')
     num_process = args.num_process
+    overwrite = args.overwrite
 
     # getting script path for supporting codes.
     np.random.seed(0)
@@ -111,6 +128,7 @@ if __name__ == "__main__":
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
+    os.chdir(output_path)
     # Determine if downsampling is needed
     cts_fn = os.path.join(input_path, "Counts.txt")
     feature_fn = os.path.join(input_path, "spot_level_intensity_features.csv")
@@ -143,15 +161,19 @@ if __name__ == "__main__":
         input_path = subsampled_input
 
     # Preparing the Sprod jobs
+    if not overwrite:
+        print('Will not overwrite existing results.')
     cmd_list = []
     for R in Rs:
         for K in Ks:
             for L in Ls:
                 output_path = os.path.join(
                     os.path.abspath('.'), 'R-{}_K-{}_L-{}'.format(R,K,L))
-                # if os.path.exists(
-                #     os.path.join(output_path, 'sprod_Denoised_matrix.txt')):
-                #     continue
+                if not overwrite:
+                    if os.path.exists(
+                        os.path.join(output_path, 'sprod_log.txt')):
+                        print('Skip processing of {}.'.format(output_path))
+                        continue
                 cmd_list.append(
                     'python {sprodpy_path} {input_path} {output_path} -r {R} -k {K} -l {L} -ws -dg'.format(
                         sprodpy_path = sprodpy_path,
@@ -212,56 +234,28 @@ if __name__ == "__main__":
         print('PyPDF2 package is not found, abort pdf merging')
     
     # getting R spatial correlations
-    denoised_cts_list = []
-    for dir in os.listdir():
-        if not os.path.isdir(dir):
-            continue
+    sprod_outputs = [x for x in os.listdir('.') if os.path.isdir(x)]
+    df_improvements = pd.DataFrame(index = sprod_outputs)
+    for dir in sprod_outputs:
         dir_files = os.listdir(dir)
-        if 'sprod_Denoised_matrix.txt' in dir_files:
-            denoised_cts_list.append(
-                os.path.join(dir, 'sprod_Denoised_matrix.txt'))
-    df_improvements = pd.DataFrame(
-        index = [x.split('/')[0] for x in denoised_cts_list],
-    )
-    meta = pd.read_csv(
-        input_path + '/Spot_metadata.csv', index_col=0
-    )
-    spot_dist = pd.DataFrame(
-        cdist(meta[['X','Y']],meta[['X','Y']]), index = meta.index,
-        columns = meta.index
-    )
-    spot_dist = spot_dist.stack()
-    for dir in os.listdir():
-        if not os.path.isdir(dir):
-            continue
-        dir_files = os.listdir(dir)
-        if 'sprod_Detected_graph.txt' in dir_files:
-            graph = pd.read_csv(
-                os.path.join(dir, 'sprod_Detected_graph.txt'), 
-                sep='\t', index_col=0)
-            graph = graph.stack()
-            graph = graph[graph>0]
-            graph_dist = spot_dist.loc[graph.index]
-            df_improvements.loc[
-                dir,'Average Graph Distance'] = graph_dist.mean()
         if 'sprod_log.txt' in dir_files:
             with open(os.path.join(dir,'sprod_log.txt')) as f:
                 for line in f:
-                    if line[:8] == '-spatial':
+                    if line.split(':')[0] == '-spatial':
                         spatial_v = float(line.strip('\n').split(':')[1])
-                    #     df_improvements.loc[
-                    #         dir,'Mean distance of top ranked edges'] = spatial_v
-                    elif line.split(':')[0] == '-image tsne':
+                        df_improvements.loc[
+                            dir,'Average Graph Distance'] = spatial_v
+                    if line.split(':')[0] == '-image tsne':
                         tsne_v = float(line.strip('\n').split(':')[1])
                         df_improvements.loc[
                             dir,'Average Image Distance'] = tsne_v
+    print(df_improvements)
     rank1 = pd.Series(
         list(range(1, 1 + df_improvements.shape[0])),
         index = df_improvements.sort_values('Average Graph Distance').index)
     rank2 = pd.Series(
         list(range(1, 1 + df_improvements.shape[0])),
-        index = df_improvements.sort_values(
-            'Average Image Distance').index)
+        index = df_improvements.sort_values('Average Image Distance').index)
     df_improvements['Rank'] = (rank1 + rank2)/2
     df_improvements = df_improvements.sort_values('Rank')
-    df_improvements.to_csv('Correlation_improvement.csv')
+    df_improvements.to_csv('pamameter_ranks.csv')
