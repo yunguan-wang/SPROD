@@ -21,6 +21,7 @@ import sys
 import argparse
 import logging
 import numpy as np
+import pandas as pd
 from multiprocessing import Pool
 from sprod.feature_extraction import extract_img_features
 from sprod.pseudo_image_gen import make_pseudo_img
@@ -76,6 +77,7 @@ class StreamToLogger(object):
     def flush(self):
         pass
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -105,6 +107,7 @@ if __name__ == "__main__":
         type=str,
         help="Output prefix used in the output.",
     )
+
     parser.add_argument(
         "--sprod_npc",
         "-sn",
@@ -112,6 +115,7 @@ if __name__ == "__main__":
         default=-1,
         help="Number of PCs to use, positive integers. -1 to use all PCs from the features.",
     )
+
     parser.add_argument(
         "--sprod_umap",
         "-su",
@@ -119,6 +123,7 @@ if __name__ == "__main__":
         action="store_true",
         help="Toggle to use UMAP on top of PCA to represent features. ",
     )
+
     parser.add_argument(
         "--sprod_R",
         "-r",
@@ -127,6 +132,7 @@ if __name__ == "__main__":
         help="Spot neighborhood radius ratio, 0-1, \
             radius=R*min(xmax-xmin,ymax-ymin).",
     )
+
     parser.add_argument(
         "--spord_perplexity",
         "-u",
@@ -135,6 +141,7 @@ if __name__ == "__main__":
         help="Perplexity, used in Sprod to find the proper Gaussian kernal \
             for distant representation.",
     )
+
     parser.add_argument(
         "--sprod_margin",
         "-g",
@@ -143,6 +150,7 @@ if __name__ == "__main__":
         help="Margin for bisection search, used in Sprod to find the proper \
             Gaussian kernal. smaller = slower => accurate u",
     )
+
     parser.add_argument(
         "--sprod_latent_dim",
         "-k",
@@ -150,6 +158,7 @@ if __name__ == "__main__":
         type=int,
         help="Dimension of the latent space used in sprod to represent spots.",
     )
+
     parser.add_argument(
         "--sprod_graph_reg",
         "-l",
@@ -157,6 +166,7 @@ if __name__ == "__main__":
         type=float,
         help="Regularization term for spot graph contructed in sprod.",
     ),
+
     parser.add_argument(
         "--sprod_weight_reg",
         "-w",
@@ -164,6 +174,7 @@ if __name__ == "__main__":
         type=float,
         help="Regularization term for the denoising weights.",
     )
+
     parser.add_argument(
         "--sprod_diag",
         "-d",
@@ -216,6 +227,15 @@ if __name__ == "__main__":
         help="Input image type. {'he', 'if'}. The 'if' mode is only tested on Visium-assocaited data.",
     )
 
+    parser.add_argument(
+        "--custom_feature",
+        "-cf",
+        default=None,
+        help="Option for advanced users. A custom spot by feature csv file can be used \
+            together with sprod extracted features. Must have matching spot names and order.\
+                The rows names should be spot names and the columns should be feature names.",
+    )
+
     args = parser.parse_args()
     input_path = args.input_path
     output_path = args.output_path
@@ -235,11 +255,12 @@ if __name__ == "__main__":
     image_feature_type = args.image_feature_type
     img_type = args.img_type
     pb = args.num_of_batches
+    custome_features_fn = args.custom_feature
     os_type = platform.system()
 
     # getting script path for supporting codes.
     sprod_path = os.path.abspath(__file__)
-    sprod_path = sprod_path.replace('sprod.py', 'sprod')
+    sprod_path = sprod_path.replace("sprod.py", "sprod")
     sprod_script = os.path.join(sprod_path, "denoise.R")
 
     if not os.path.exists(output_path):
@@ -281,7 +302,9 @@ if __name__ == "__main__":
         num_tifs = len([x for x in os.listdir(input_path) if x[-4:] == ".tif"])
         if num_tifs == 1:
             logging.info(
-                "Extracting intensity and texture features from matching {} image".format(img_type.upper())
+                "Extracting intensity and texture features from matching {} image".format(
+                    img_type.upper()
+                )
             )
             _ = extract_img_features(input_path, img_type, input_path)
         elif num_tifs == 0:
@@ -290,7 +313,9 @@ if __name__ == "__main__":
             spots_fn = os.path.join(input_path, "Spot_metadata.csv")
             dp_script_path = os.path.join(sprod_path, "dirichlet_process_clustering.R")
             make_pseudo_img(cts_fn, spots_fn, input_path, "dp", dp_script_path)
-            pseudo_img_feature_fn = os.path.join(input_path, 'pseudo_image_features.csv')
+            pseudo_img_feature_fn = os.path.join(
+                input_path, "pseudo_image_features.csv"
+            )
         else:
             logging.error(
                 "More than one images are present. Please remove the unwanted ones."
@@ -308,12 +333,23 @@ if __name__ == "__main__":
             if not os.path.exists(feature_fn):
                 if os.path.exists(pseudo_img_feature_fn):
                     feature_fn = pseudo_img_feature_fn
-                    print('Image derived features not found, will use pseudo image features.')
+                    print(
+                        "Image derived features not found, will use pseudo image features."
+                    )
             if not os.path.exists(intermediate_path):
                 os.makedirs(intermediate_path)
             cts_fn = os.path.join(input_path, "Counts.txt")
             n_spots = sum(1 for _ in open(cts_fn))
             pn = int(np.ceil(n_spots / 5000))
+            if custome_features_fn is not None:
+                tmp_features = pd.read_csv(feature_fn, index_col=0)
+                custome_features = pd.read_csv(custome_features_fn, index_col=0)
+                assert (
+                    tmp_features.index == custome_features.index
+                ).all(), "Spots in custom feature matrix does not match those in exacted features."
+                pooled_features = pd.concat([tmp_features, custome_features], axis=1)
+                feature_fn = os.path.join(input_path, "pooled_features.csv")
+                pooled_features.to_csv(feature_fn)
             subsample_patches(input_path, intermediate_path, feature_fn, pn, pb)
             input_path = intermediate_path
         elif input_type == "single":
@@ -339,7 +375,9 @@ if __name__ == "__main__":
                 == os.path.exists(feature_fn)
                 == True
             ):
-                logging.error("At least one subsample failed. Please check the output folder.")
+                logging.error(
+                    "At least one subsample failed. Please check the output folder."
+                )
                 raise ValueError()
             inputs.append([cts_fn, meta_fn, feature_fn])
     else:
@@ -350,12 +388,34 @@ if __name__ == "__main__":
             input_path,
             "{}_level_{}_features.csv".format(*image_feature_type.split("_")),
         )
+
         # always tries to use image derived features, then pseudo images.
         if not os.path.exists(feature_fn):
-            pseudo_img_feature_fn = os.path.join(input_path, 'pseudo_image_features.csv')
+            pseudo_img_feature_fn = os.path.join(
+                input_path, "pseudo_image_features.csv"
+            )
             if os.path.exists(pseudo_img_feature_fn):
                 feature_fn = pseudo_img_feature_fn
-                print('Image derived features not found, will use pseudo image features.')
+                logging.info(
+                    "Image derived features not found, will use pseudo image features."
+                )
+            else:
+                raise FileNotFoundError("Image features not found.")
+        else:
+            logging.info("Image derived features found, will use these.")
+
+        # Incorporate custom features
+        if custome_features_fn is not None:
+            tmp_features = pd.read_csv(feature_fn, index_col=0)
+            custome_features = pd.read_csv(custome_features_fn, index_col=0)
+            assert (
+                tmp_features.index == custome_features.index
+            ).all(), "Spots in custom feature matrix does not match those in exacted features."
+            pooled_features = pd.concat([tmp_features, custome_features], axis=1)
+            logging.info("Appended custom features into existing features.")
+            feature_fn = os.path.join(input_path, "pooled_features.csv")
+            pooled_features.to_csv(feature_fn)
+
         # final check for all required input files.
         if not (
             os.path.exists(cts_fn)
@@ -416,10 +476,10 @@ if __name__ == "__main__":
                 sprod_diagnose,
             ],
         ):
-            if isinstance(param, bool): # for toggles
+            if isinstance(param, bool):  # for toggles
                 if param:
                     sprod_cmd.append(str(sprod_key))
-            else: # for kwargs
+            else:  # for kwargs
                 sprod_cmd.append(sprod_key)
                 sprod_cmd.append(str(param))
         # log file name is packed into cmd
