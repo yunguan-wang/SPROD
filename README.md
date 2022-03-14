@@ -163,4 +163,11 @@ A few additional notes for the parameters:
 @Bing
 
 ### Automatic parameter selection
-We have included a script for automatic grid search of the tuning parameters, which is `parameter_selection.py`. By default a 3 X 3 X 3 paramater space is searched and the Sprod performance is prioritized based on the qualities of the constructed latent graph. Parameter sets that preserve the overall spot physical struction and image similarity better will bet ranked higher. The ranks and metrics are provided in the `pamameter_ranks.csv`, as well as the diagnostic plots for each parameter combination.
+We have included a script for automatic grid search of the tuning parameters, which is `parameter_selection.py`. By default a 3 X 3 X 3 paramater space is searched and the Sprod performance is evaluated based on the qualities of the constructed latent graph. The the diagnostic plots for each parameter combination ranks will be saved in the output folder. In addition, Parameter sets will be ranked so that those preserve the overall spot physical struction and image similarity better will be ranked higher. These infomation will be summerized in the 'pamameter_ranks.csv`, and an example of the file contents is shown below.
+
+||Average Graph Distance|Average Image Distance|Rank|
+|-----|-----|-----|-----|
+|R-0.1_K-5_L-15|759.78|2.51|7.0|
+|R-0.1_K-5_L-10|759.63|2.70|7.5|
+|R-0.1_K-3_L-5|754.38|2.82|8.0|
+|R-0.1_K-10_L-15|754.94|2.88|9.0|
