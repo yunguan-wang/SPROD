@@ -151,14 +151,12 @@ optional arguments:
 
 A few additional notes for the parameters:
 
-`--type` or `-y` : For small datasets with a few thousands spots, this should be set to `single`, while for larger datasets with tens of thousands of spots, this should be set to `batch` to let Sprod run on subsamples in parallell to avoid memory problems.
+(1) `--type` or `-y` : For small datasets with a few thousands spots, this should be set to `single`, while for larger datasets with tens of thousands of spots, this should be set to `batch` to let Sprod run on subsamples in parallell to avoid memory problems.
 
-`--warm_start` or `-ws` : This is helpful if the image features were extracted in a previous run and a new run is desired with new parameter sets only for the denoising steps. Sprod will automatically look for the needed files in the input directory. 
+(2) `--warm_start` or `-ws` : This is helpful if the image features were extracted in a previous run and a new run is desired with new parameter sets only for the denoising steps. Sprod will automatically look for the needed files in the input directory. In the warm start mode, the input folder must contains either the real image features or the pseudo image features. The real image features should be named as  `[spot/block]_level_[intensity/texture]_features.csv`, and the pseudo image features should be called `pseudo_image_features.csv`. If both sets of features exist, Sprod will only use the real image features.
 
-#### Note: In warm start mode, the input folder must contains either the real image features or the pseudo image features. The real image features should be named as  `[spot/block]_level_[intensity/texture]_features.csv`, and the pseudo image features should be called `pseudo_image_features.csv`. If both sets of features exist, Sprod will only use the real image features.
-
-### Cell type deconvolution results as input "image" features
-
+(3) Cell type deconvolution results as input "image" features
+@Bing
 
 ### Automatic parameter selection
 We have included a script for automatic grid search of the tuning parameters, which is `parameter_selection_demo.py`. By default a 3 X 3 X 3 paramater space is searched and the Sprod performance is prioritized based on the qualities of the constructed latent graph. Parameter sets that preserve the overall spot physical struction and image similarity better will bet ranked higher.
