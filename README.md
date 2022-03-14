@@ -8,7 +8,7 @@ Spatial Transcriptomics (ST) techniques provide gene expression close to or even
 <img src="https://github.com/yunguan-wang/SPROD/blob/master/img/model.png" height="500" width="500">
 
 ## Installation
-We strongly recommend using conda to manage the installation of all dependencies. To do this simply run:
+We strongly recommend using conda to manage the installation of all dependencies. To do this, simply run:
 
 ```
 conda create --name sprod
@@ -23,7 +23,7 @@ cd [path/to/sprod]
 pip install .
 ```
 
-The total installation time is around 10 mintunes. If error occuors please upgrade pip and try again.
+The total installation time is around 10 mintunes. If error occuors, please upgrade pip and try again.
 
 ## Test installation
 We have included a simple testing script `test_examples.py` to test the environment and installation. It is based on the toy example dataset included in this repo. Please note that the example data in this repo is only for the purpose of testing installation. 
@@ -36,7 +36,7 @@ Three tests were included in this testing script covering different use cases.
 
 `single_pseudoimage` is for use cases where matching image is not avalable. Cluster probablities of each spot is used as features for sprod.
 
-After installation, run the following code in and the should conclude in a few minutes.
+After installation, run the following code in and the processing should conclude in a few minutes.
 
 ```
 python [path/to/sprod/]test_examples.py
@@ -84,7 +84,7 @@ as well as a `Spot_metadata.csv` for positional information of each sequenced sp
 |spot4|8|1|0.5|
 |spot5|1|7|0.5|
 
-Mandantory columns: `X`, `Y`, which stand for X coordinates, Y coordinates; `Spot_radius` is required when matching image is offered, which stand for the radius of each sequencing spot and used in feature extraction; 
+Mandantory columns: `X`, `Y`, which stand for the X coordinates and Y coordinates; `Spot_radius` is required when matching image is offered, which stands for the radius of each sequencing spot and is used in feature extraction; 
 Optional columns: "Z" for Z coordinates if your spatial information has three dimensions. 
 
 We have included a `data_preprocessing.py` script in this repo for processing raw data in Visium or Slide-seq V2 format. For data from other sources, please refer to the script and process your data into the supported format.
@@ -93,12 +93,12 @@ We have included a `data_preprocessing.py` script in this repo for processing ra
 Feature extraction (with matching image) or generation (without matching image) is wrapped up in the `sprod.py` script. The feature extraction process is carried out automatically on the fly, and the details are also summerized briefly in below.
 
 #### Dataset with a matching image
-Sprod works best when the spatial dataset contains a matching image (such as 10X Visium). For this type of datasets, Sprod will extract image features using the [extract_img_features](https://github.com/yunguan-wang/SPROD/blob/master/sprod/feature_extraction.py#L29) function, which will look at image regions around each spot and extract intensity and texture features. The shape of the image region can be specified using the `--feature_mask_shape` parameter. For Dataset in which sequencing spots, the region of interest can be the exact sequencing spot ('spot'), or a rectangular box surrounding each spot ('block). 
+Sprod works best when the spatial dataset contains a matching pathological image (such as 10X Visium). For this type of datasets, Sprod will extract image features using the [extract_img_features](https://github.com/yunguan-wang/SPROD/blob/master/sprod/feature_extraction.py#L29) function, which will look at image regions around each spot and extract intensity and texture features. The shape of the image region can be specified using the `--feature_mask_shape` parameter. For Dataset in which sequencing spots, the region of interest can be the exact sequencing spot ('spot'), or a rectangular box surrounding each spot ('block). 
 
 Note: for block mask shape, the `Row` and `Col` columns must be present in the `Spot_metadata.csv` file.
 
 #### Dataset without a matching image
-Sometimes the ST dataset does not have a matching image, such as those from the Slide-Seq platform and a Visium dataset without high-resolution image. In this case, Sprod will apply soft clustering on the spots based on gene expression and will use the cluster identities/probabilities as the input features for denoising, which we call pseudo-image features. Sprod does this through calling the [make_pseudo_img](https://github.com/yunguan-wang/SPROD/blob/master/sprod/pseudo_image_gen.py#L71) function.
+Sometimes the ST dataset does not have a matching image, such as those from the Slide-Seq platform and a Visium dataset without high-resolution image. In this case, Sprod will apply clustering on the spots based on gene expression and will use the cluster identities/probabilities as the input features for denoising, which we call pseudo-image features. Sprod does this through calling the [make_pseudo_img](https://github.com/yunguan-wang/SPROD/blob/master/sprod/pseudo_image_gen.py#L71) function.
 
 ### Handling very big spatial dataset
 Sprod works well with datasets of thousands of sequencing spots/beads. However, for large datasets with tens of thousands of spots/beads, special operations must be performed so that Sprod can run smoothly. Srpod employs a splitting-stitching scheme to facilitate large dataset processing. Each Slide-seq dataset is randomly (not dependent on spatial location) divided into n (10 by default) equal-sized subsets, and this process is repeated b (10 by default) times. Then, Sprod denoising is performed on each of the n * b subsets and the denoised results are concatenated. Each spot is exactly denoised b times, and the concatenated denoised data from the n sampling batches are averaged so that the randomness resulting from the sub-sampling procedure is averaged out. In the `batch` mode, the computational time is linearly proportional to the total number of sequncing spots/cells. 
@@ -121,30 +121,30 @@ optional arguments:
   --output_prefix, -p   
                         Output prefix used in the output. (default: sprod)
   --sprod_npc, -sn      
-                        Number of PCs to use, positive integers. -1 to use all PCs from the features.(default: -1)
+                        Number of Principal Components (PCs) to use, positive integers. -1 to use all PCs from the features.(default: -1)
   --sprod_umap, -su     
                         Toggle to use UMAP on top of PCA to represent features. (default: False)
   --sprod_R, -r         
                         Spot neighborhood radius ratio, 0-1, radius=R*min(xmax-xmin,ymax-ymin). (default: 0.08)
   --spord_perplexity, -u
-                        Perplexity, used in Sprod to find the proper Gaussian kernal for distant representation. (default: 250)
+                        Perplexity, as in tSNE, during the graph building process. (default: 250)
   --sprod_margin, -g    
-                        Margin for bisection search, used in Sprod to find the proper Gaussian kernal. smaller => slower => accurate (default: 0.001)
+                        Margin for the bisection method for solving the perpexity equation. smaller => slower => accurate (default: 0.001)
   --sprod_latent_dim, -k
                         Dimension of the latent space used in sprod to represent spots. (default: 10)
   --sprod_graph_reg, -l
-                        Regularization term for spot graph contructed in sprod. (default: 1)
+                        Regularization term for the similarity graph contruction in sprod. (default: 1)
   --sprod_weight_reg, -w
                         Regularization term for the denoising weights. (default: 0.625)
   --sprod_diag, -d      
                         Toggle to force graph weights to be diagnoal, useful in reducing over smoothing (default: False)
   --image_feature_type, -i
-                        Type of feature extracted. combination from {'spot', 'block'} and {'intensity', 'texture'} with '_' as
-                        delimiter. Only relevant if the input dataset contains an matching tif image. (default: spot_intensity)
+                        Type of feature extracted. combination of {'spot', 'block'} and {'intensity', 'texture'} with '_' as
+                        the delimiter. Only relevant if the input dataset contains an matching tif image. (default: spot_intensity)
   --warm_start, -ws     
-                        Toggle for warm start, which will skip all preprocessing steps in feature extraction and batch mode prep. (default: False)
+                        Toggle for warm start, which will skip all preprocessing steps in feature extraction and batch mode preparation. (default: False)
   --num_of_batches, -pb
-                        How many times subsampling is ran. Only works when --input_type is batch. (default: 10)
+                        How many times subsampling is run. Only works when --input_type is "batch". (default: 10)
   -ci, --img_type
                         Input image type. {'he', 'if'}. The 'if' mode is only tested on Visium-assocaited data. (default: he)
 ```
@@ -153,24 +153,12 @@ A few additional notes for the parameters:
 
 `--type` or `-y` : For small datasets with a few thousands spots, this should be set to `single`, while for larger datasets with tens of thousands of spots, this should be set to `batch` to let Sprod run on subsamples in parallell to avoid memory problems.
 
-`--warm_start` or `-ws` : This is helpful if image features were extracted in a previous run and a new run is desired with new parameter sets only for the denoising steps. Sprod will automatically look for the needed files in the input directory. 
-
-We have included a demo script for grid search style parameter selction in `parameter_selection_demo.py`. By default a 3 X 3 X 3 paramater space is searched and the Sprod performance is prioritized based on the qualities of the constructed latent graph. Parameter sets that preserve the overall spot physical struction and image similarity better will bet ranked higher.
+`--warm_start` or `-ws` : This is helpful if the image features were extracted in a previous run and a new run is desired with new parameter sets only for the denoising steps. Sprod will automatically look for the needed files in the input directory. 
 
 #### Note: In warm start mode, the input folder must contains either the real image features or the pseudo image features. The real image features should be named as  `[spot/block]_level_[intensity/texture]_features.csv`, and the pseudo image features should be called `pseudo_image_features.csv`. If both sets of features exist, Sprod will only use the real image features.
 
-## Example applications
-### Application on Visium
-Expression drop-outs are one important source of the noises that we tackle. We evaluated the gene expression dropout levels of data from bulk RNA-seq, Single-cell RNA-seq, Visium and Slide-Seq, and the Sprod-denoised Slide-Seq data. Sprod improved the quality of Slide-Seq data drastically, in terms of drop-outs. The X-axis is the average RNA expression levels of each gene profiled by each technique/dataset, and the Y axis shows the percentages of counts of exactly 0 for each gene.
+### Cell type deconvolution results as input "image" features
 
-<img src="https://github.com/yunguan-wang/SPROD/blob/master/img/slideseq_dropout_comp.JPG" height="250" width="600">
 
-In this following example (shown in our paper as well), a public [Visium dataset on ovarian cancer](https://www.10xgenomics.com/resources/datasets/human-ovarian-cancer-whole-transcriptome-analysis-stains-dapi-anti-pan-ck-anti-cd-45-1-standard-1-2-0) from 10X Genomics is used. As the matching image is an immunofluorescence image with a CD45 channel, it is possible to directly compare the correlation between the CD45 signal with raw/denoised PTPRC expression, which encodes the CD45 protein (the CD45 channel wasn't used during Sprod's denoising). 
-
-<img src="https://github.com/yunguan-wang/SPROD/blob/master/img/visium_raw_scatter.j.JPG" height="300" width="300">
-
-As shown in the figure, many spots with high CD45 staining were quite low in PTPRC expression, suggesting the presence of noise. We applied Sprod to this dataset and then visualized the overlap between CD45 and raw/denoised PTPRC expression, and the overlap was much better after Sprod denoising.
-
-<img src="https://github.com/yunguan-wang/SPROD/blob/master/img/visium_overlap.JPG" height="300" width="600">
-
-For more information regarding the rationale of our study and the performance/usage of Sprod, please refer to our paper (link pending)
+### Automatic parameter selection
+We have included a script for automatic grid search of the tuning parameters, which is `parameter_selection_demo.py`. By default a 3 X 3 X 3 paramater space is searched and the Sprod performance is prioritized based on the qualities of the constructed latent graph. Parameter sets that preserve the overall spot physical struction and image similarity better will bet ranked higher.
