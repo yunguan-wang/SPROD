@@ -145,8 +145,12 @@ optional arguments:
                         Toggle for warm start, which will skip all preprocessing steps in feature extraction and batch mode preparation. (default: False)
   --num_of_batches, -pb
                         How many times subsampling is run. Only works when --input_type is "batch". (default: 10)
-  -ci, --img_type
+  --img_type, -ci
                         Input image type. {'he', 'if'}. The 'if' mode is only tested on Visium-assocaited data. (default: he)
+  --custom_feature, -cf
+                        Option for advanced users. A custom spot by feature csv file can be used together with sprod extracted
+                        features. Must have matching spot names and order. The rows names should be spot names and the columns should
+                        be feature names. (default: None)
 ```
 
 A few additional notes for the parameters:
@@ -159,4 +163,4 @@ A few additional notes for the parameters:
 @Bing
 
 ### Automatic parameter selection
-We have included a script for automatic grid search of the tuning parameters, which is `parameter_selection_demo.py`. By default a 3 X 3 X 3 paramater space is searched and the Sprod performance is prioritized based on the qualities of the constructed latent graph. Parameter sets that preserve the overall spot physical struction and image similarity better will bet ranked higher.
+We have included a script for automatic grid search of the tuning parameters, which is `parameter_selection.py`. By default a 3 X 3 X 3 paramater space is searched and the Sprod performance is prioritized based on the qualities of the constructed latent graph. Parameter sets that preserve the overall spot physical struction and image similarity better will bet ranked higher. The ranks and metrics are provided in the `pamameter_ranks.csv`, as well as the diagnostic plots for each parameter combination.
