@@ -159,7 +159,9 @@ A few additional notes for the parameters:
 
 (2) `--warm_start` or `-ws` : This is helpful if the image features were extracted in a previous run and a new run is desired with new parameter sets only for the denoising steps. Sprod will automatically look for the needed files in the input directory. In the warm start mode, the input folder must contains either the real image features or the pseudo image features. The real image features should be named as  `[spot/block]_level_[intensity/texture]_features.csv`, and the pseudo image features should be called `pseudo_image_features.csv`. If both sets of features exist, Sprod will only use the real image features.
 
-(3) `--custom_features` or `-cf`: This gives an option to add features customized by users. This will be added to the real image or pseuo-image features after features extraction. In the mode of "warm start", this is directly merged with features deteced. This is also where users can import the file of cell type probability/abundance/proportion computed by deconvolution. To be noticed, the cell type annotation information should be extracted as csv file from cell deconvolution software and organized into the correct format (spot names in row and cell types in column as features) before inputing. An example file can be found at `test_example/input/custom_features_deconvoluted_cell_types.csv` 
+(3) `--custom_features` or `-cf`: This optional parameter is for advanced users who wish to use their own feature matrix in addition to sprod's extracted features. This is also where users can import results from cell type deconvolution softwares such as SpatialDWLS. Please make sure the input feature matrix is of the correct format (a csv file with spot ids as row names and feature names as column names, and the row names should match other inputs on a one-to-one basis).
+
+An examplal feature matrix can be found at `test_example/input/custom_features_deconvoluted_cell_types.csv` 
 
 ### Automatic parameter selection
 We have included a script for automatic grid search of the tuning parameters, which is `parameter_selection.py`. By default a 3 X 3 X 3 paramater space is searched and the Sprod performance is evaluated based on the qualities of the constructed latent graph. The the diagnostic plots for each parameter combination ranks will be saved in the output folder. In addition, Parameter sets will be ranked so that those preserve the overall spot physical struction and image similarity better will be ranked higher. These infomation will be summerized in the 'pamameter_ranks.csv`, and an example of the file contents is shown below.
@@ -170,3 +172,13 @@ We have included a script for automatic grid search of the tuning parameters, wh
 |R-0.1_K-5_L-10|759.63|2.70|7.5|
 |R-0.1_K-3_L-5|754.38|2.82|8.0|
 |R-0.1_K-10_L-15|754.94|2.88|9.0|
+
+
+An example includes inputs and outputs of this functionality can be found in `parameter_selection_example/outputs`
+
+### Contact Us
+If you have suggestions/ideas for Sprod or is having issues trying to use it, please don't hesitate to reach out to us.
+
+Yunguan Wang, yunguan[dot]wang@utsouthestern[dot]edu
+Tao Wang, tao[dot]wang@utsouthestern[dot]edu
+Bing Song, bing[dot]song@utsouthestern[dot]edu
