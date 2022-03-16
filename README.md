@@ -177,8 +177,10 @@ We have included a script for automatic grid search of the tuning parameters, wh
 An example includes inputs and outputs of this functionality can be found in `parameter_selection_example/outputs`
 
 ### Contact Us
-If you have suggestions/ideas for Sprod or is having issues trying to use it, please don't hesitate to reach out to us.
+If you have any suggestions/ideas for Sprod or is having issues trying to use it, please don't hesitate to reach out to us.
 
 Yunguan Wang, yunguan[dot]wang@utsouthestern[dot]edu
+
 Tao Wang, tao[dot]wang@utsouthestern[dot]edu
+
 Bing Song, bing[dot]song@utsouthestern[dot]edu
