@@ -5,7 +5,7 @@ Sprod: De-noising Spatial Transcriptomics Data Based on Position and Image Infor
 Spatial Transcriptomics (ST) techniques provide gene expression close to or even superior to single cell resolution, while retaining the physical locations of sequencing and sometimes also provide matched pathological images. However, the expression data captured by ST techniques suffer from severe inaccuracies, including but not limited to drop-outs as in regular single cell RNA-sequencing (scRNA-seq) data. To reduce the level of noise in the data, we developped the Sprod tool, which incorporated image information and spot/bead positional information and used latent graph modeling to correct the gene expression data of each spot/bead.
 
 ## Graphical abstract
-<img src="https://github.com/yunguan-wang/SPROD/blob/master/img/model.png" height="500" width="500">
+<img src="https://github.com/yunguan-wang/SPROD/blob/master/img/model.png" height="300" width="300">
 
 ## Installation
 We strongly recommend using conda to manage the installation of all dependencies. To do this, simply run:
