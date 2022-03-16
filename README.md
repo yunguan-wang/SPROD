@@ -181,6 +181,6 @@ If you have any suggestions/ideas for Sprod or is having issues trying to use it
 
 Yunguan Wang, yunguan[dot]wang@utsouthestern[dot]edu
 
-Tao Wang, tao[dot]wang@utsouthestern[dot]edu
-
 Bing Song, bing[dot]song@utsouthestern[dot]edu
+
+Tao Wang, tao[dot]wang@utsouthestern[dot]edu
