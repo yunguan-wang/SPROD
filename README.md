@@ -83,7 +83,10 @@ as well as a `Spot_metadata.csv` for positional information of each sequenced sp
 |spot4|8|1|0.5|
 |spot5|1|7|0.5|
 
-Mandantory columns: `X`, `Y`, which stand for the X coordinates and Y coordinates of the center of each sequencing spot; `Spot_radius` is required when the matching image is offered, which stands for the radius of each sequencing spot and is used in feature extraction; The unit of coordinates must be the same between the matching image and the metadata. 
+Mandantory columns: `X`, `Y`, which stand for the X coordinates and Y coordinates of the center of each sequencing spot。
+
+`Spot_radius` is required when the matching image is offered, which stands for the radius of each sequencing spot and is used in feature extraction; The unit of coordinates must be the same between the matching image and the metadata. 
+
 Optional columns: "Z" for Z coordinates if your spatial information has three dimensions. 
 
 We have included a `data_preprocessing.py` script in this repo for processing raw data in Visium or Slide-seq V2 format. For data from other sources, please refer to the script and process your data into the supported format.
