@@ -74,8 +74,7 @@ Sprod workflow requires two mandatory files, a `Counts.txt` (with "\t" as the de
 |spot4|0.82|2.01|1.25|1.18|2.13|
 |spot5|1.01|2.07|1.27|1.22|2.16|
 
-as well as a `Spot_metadata.csv` for positional information of each sequenced spot. 
-
+as well as a `Spot_metadata.csv` for positional information of each sequenced spot.
 ||X|Y|Spot_radius|
 |-----|-----|-----|-----|
 |spot1|1|2|0.5|
@@ -84,7 +83,7 @@ as well as a `Spot_metadata.csv` for positional information of each sequenced sp
 |spot4|8|1|0.5|
 |spot5|1|7|0.5|
 
-Mandantory columns: `X`, `Y`, which stand for the X coordinates and Y coordinates; `Spot_radius` is required when the matching image is offered, which stands for the radius of each sequencing spot and is used in feature extraction; 
+Mandantory columns: `X`, `Y`, which stand for the X coordinates and Y coordinates of the center of each sequencing spot; `Spot_radius` is required when the matching image is offered, which stands for the radius of each sequencing spot and is used in feature extraction; The unit of coordinates must be the same between the matching image and the metadata. 
 Optional columns: "Z" for Z coordinates if your spatial information has three dimensions. 
 
 We have included a `data_preprocessing.py` script in this repo for processing raw data in Visium or Slide-seq V2 format. For data from other sources, please refer to the script and process your data into the supported format.
@@ -95,7 +94,7 @@ Feature extraction (with matching image) or generation (without matching image) 
 #### Dataset with a matching image
 Sprod works best when the spatial dataset contains a matching pathological image (such as 10X Visium). For this type of datasets, Sprod will extract image features using the [extract_img_features](https://github.com/yunguan-wang/SPROD/blob/master/sprod/feature_extraction.py#L29) function, which will look at image regions around each spot and extract intensity and texture features. The shape of the image region can be specified using the `--feature_mask_shape` parameter. The region of interest can be the exact sequencing spot ('spot'), or a rectangular box surrounding each spot ('block). 
 
-Note: for block mask shape, the `Row` and `Col` columns must be present in the `Spot_metadata.csv` file.
+Note: for block mask shape, the `Row` and `Col` columns must be present in the `Spot_metadata.csv` file. These two columns correspond to the row or column indices (starting from 0) of the sequencing spots, and are used to determine the size of the bounding box around each spot.  
 
 #### Dataset without a matching image
 Sometimes the ST dataset does not have a matching image, such as those from the Slide-Seq platform and a Visium dataset without high-resolution image. In this case, Sprod will apply clustering on the spots based on gene expression and will use the cluster identities/probabilities as the input features for denoising, which we call pseudo-image features. Sprod does this through calling the [make_pseudo_img](https://github.com/yunguan-wang/SPROD/blob/master/sprod/pseudo_image_gen.py#L71) function.
