@@ -25,6 +25,9 @@ pip install .
 
 The total installation time is around 10 mintunes. If error occuors, please upgrade pip and try again.
 
+#### Note:
+In a rare scenario where: 1) Sprod is executed under a HPC or cloud environment; 2) you are using a shared `R` installation; and 3) you do not have write access to the shared `R` path; and 4) you have never installed any packages using the shared 'R', you will need to run `R` in interactive mode and install the R package 'dirichletprocess' manually. 
+
 ## Test installation
 We have included a simple testing script `test_examples.py` to test the environment and installation. It is based on the toy example dataset included in this repo. Please note that the example data in this repo is only for the purpose of testing installation. 
 
