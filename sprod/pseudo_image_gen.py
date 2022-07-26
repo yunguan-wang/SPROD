@@ -102,8 +102,10 @@ def make_pseudo_img(
 
         # Filterout genes expressed in less than 10 spots.
         valid_genes = cts.columns[((cts > 0).sum() >= 10)]
-        # CPM normalization
-        cts = 1e4 * cts.apply(lambda x: x/x.sum(), axis=1)
+        # CPM normalization if not already normalized
+        if cts.max().max() > 100:
+            cts = 1e4 * cts.apply(lambda x: x/x.sum(), axis=1)
+            cts = np.log2(1 + cts)
         cts = cts[valid_genes]
         cts = cts.dropna() # some visium data has blank spots
 
