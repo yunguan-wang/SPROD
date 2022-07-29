@@ -85,7 +85,10 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "input_path", type=str, help="Input folder containing all necessary files."
+        "input_path", 
+        type=str, 
+        help="Input folder containing all necessary files. Must have Counts.txt \
+            and Spot_metadata.csv."
     )
 
     parser.add_argument("output_path", type=str, help="Output path")
@@ -208,7 +211,7 @@ if __name__ == "__main__":
         "-dg",
         default=False,
         action="store_true",
-        help="Toggle invoking plotting dianosis plots in denoise.R",
+        help="Toggle invoking plotting diagnosis plots in denoise.R",
     )
 
     parser.add_argument(
