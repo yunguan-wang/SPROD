@@ -1,8 +1,9 @@
-from numpy.core.defchararray import index
 import pandas as pd
 import os
 import sys
 import numpy as np
+import subprocess
+
 
 def stiching_denoised_patches(input_path, output_fn = None):
     cts_files = sorted([x for x in os.listdir(input_path) if 'Counts.txt' in x])
@@ -28,30 +29,46 @@ def stiching_denoised_patches(input_path, output_fn = None):
 def stiching_subsampled_patches(input_path, output_fn):
     cts_files = sorted([x for x in os.listdir(input_path) if 'Denoised' in x])
     batches = list(set(['_'.join(x.split('_')[:2]) for x in cts_files]))
+    
+    # Make sure all batches are good.
+    batch_dict = {}
+    for _, batch in enumerate(batches):
+        patch_cts = [x for x in cts_files if batch in x]
+        # patch_cts = [os.path.join(input_path, x) for x in patch_cts]
+        # get number of total barcodes
+        result = subprocess.check_output(
+            'wc -l {}/{}_*matrix.txt'.format(input_path, batch),
+            shell=True,
+            text=True)
+        # Get the total number lines minus 1 as the total number of barcodes in a batch
+        n_barcodes = int(result.split('\n')[-2].split(' ')[4:][0]) - len(patch_cts)
+        batch_dict[batch] = n_barcodes
+
+    barcodes_counts = np.unique([x for x in batch_dict.values()], return_counts=True)
+    n_total_cells = barcodes_counts[0][np.argmax(barcodes_counts[1])]
+    good_batches = {
+        key: val for key, val in batch_dict.items() if val == n_total_cells}
+    good_batches = good_batches.keys()
+    
+    # Pooling data.
     tmp = pd.read_csv(
         os.path.join(input_path, cts_files[0]),
         index_col=0, sep='\t',nrows=5)
     n_genes = tmp.shape[1]
     gene_names = tmp.columns
-    for i, batch in enumerate(batches):
+    pooled_barcodes = []
+    for batch in good_batches:
         patch_cts = [x for x in cts_files if batch in x]
-        patch_cts = [os.path.join(input_path, x) for x in patch_cts]
-        # get number of total barcodes
-        if i == 0:
-            patch_metas = [
-                x.replace('Denoised_matrix.txt','Latent_space.txt') for x in patch_cts]
-            n_barcodes = 0
-            for meta in patch_metas:
-                n_barcodes += pd.read_csv(meta, sep='\t').shape[0]
-        barcode_list = []
-        cts_array = np.zeros((n_barcodes, n_genes))
+        patch_cts = [os.path.join(input_path, x) for x in patch_cts] 
+        cts_array = np.zeros((n_total_cells, n_genes))
         top = 0
-        for j, cts_fn in enumerate(patch_cts):
+        barcode_list = []
+        for _, cts_fn in enumerate(patch_cts):
             print('Processing {}'.format(cts_fn))
             cts = pd.read_csv(cts_fn, index_col=0, sep='\t')
             barcode_list += cts.index.tolist()
             delta = cts.shape[0]
-            cts_array[top:top+delta] = cts.values
+            cts_array[top:top+delta,:] = cts.values
             top = top + delta
 
         barcode_list = np.array(barcode_list)
@@ -59,16 +76,16 @@ def stiching_subsampled_patches(input_path, output_fn):
         cts_array = cts_array[barcode_order,:]
         barcode_list = barcode_list[barcode_order]
 
-        if i == 0:
+        if pooled_barcodes == []:
             pooled_barcodes = barcode_list
             pooled_cts = cts_array
         else:
             assert((barcode_list == pooled_barcodes).all()), 'Barcodes in batches does not match!'
             pooled_cts += cts_array
 
-    pooled_cts = pooled_cts / len(batches)
+    pooled_cts = pooled_cts / len(good_batches)
     pooled_cts = pd.DataFrame(pooled_cts, index = pooled_barcodes, columns=gene_names)
-    pooled_cts.to_hdf(output_fn, key = 'denoised')
+    pooled_cts.round(2).to_csv(output_fn, sep = '\t')
 
 if __name__ == '__main__':
     input_path = sys.argv[1]
