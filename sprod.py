@@ -497,5 +497,5 @@ if __name__ == "__main__":
     if input_type == "batch":
         stiching_script_path = os.path.join(sprod_path, "slide_seq_stiching.py")
         stiching_subsampled_patches(
-            output_path, os.path.join(output_path, "denoised_stiched.hdf")
+            output_path, os.path.join(output_path, "denoised_stiched.txt")
         )
