@@ -13,6 +13,7 @@ We strongly recommend using conda to manage the installation of all dependencies
 ```
 conda create --name sprod
 conda activate sprod
+# conda config --add channels conda-forge ##If you do not have this channel added before#
 conda install r-base=4.0 r-optparse r-distances r-dplyr r-gtools r-mvtnorm r-ggplot2 r-umap
 conda install python=3.7 pandas scikit-image=0.17 numpy scipy scikit-learn umap-learn
 ```
