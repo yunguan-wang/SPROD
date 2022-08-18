@@ -343,7 +343,7 @@ if __name__ == "__main__":
                 os.makedirs(intermediate_path)
             cts_fn = os.path.join(input_path, "Counts.txt")
             n_spots = sum(1 for _ in open(cts_fn))
-            pn = int(np.ceil(n_spots / 5000))
+            pn = max(1,int(np.ceil(n_spots / 5000)))
             if custome_features_fn is not None:
                 tmp_features = pd.read_csv(feature_fn, index_col=0)
                 custome_features = pd.read_csv(custome_features_fn, index_col=0)
