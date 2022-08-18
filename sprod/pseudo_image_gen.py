@@ -3,7 +3,7 @@ This script will generate a matrix of pseudo image features from expression matr
 A conda env is available in the project folder. 
 
 # input 1 : counts matrix, raw counts, sample by gene name
-# input 2 : spot metadata, MUST have 'row','col' columns.
+# input 2 : spot metadata, MUST have 'X','Y' columns.
 # input 3 : output path, optional, default is ./intermediate
 # input 4 : clustering algorithm, optional. {'hdbscan','dp'}. Defaul 'hdbscan'
 # input 5 : input dataset type, optional. {'slideseq','visium'}. Defaul 'slideseq'
