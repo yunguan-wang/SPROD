@@ -40,7 +40,7 @@ except FileNotFoundError:
 
 print('Testing Sprod in batch mode')
 os.system(
-    'python {} -ci if -y batch -pb 2 {} {}/batch_with_img '.format(denoise_jb, input_path, test_path))
+    'python {} -y batch -pn 2 -pb 2 {} {}/batch_with_img -ci if'.format(denoise_jb, input_path, test_path))
 try:
     test_denoised = pd.read_hdf(os.path.join(test_path,'batch_with_img/denoised_stiched.hdf'))
     ref_denoised = pd.read_hdf(os.path.join(output_path,'batch_with_img/denoised_stiched.hdf'))
