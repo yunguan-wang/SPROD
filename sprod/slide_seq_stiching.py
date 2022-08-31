@@ -27,6 +27,16 @@ def stiching_denoised_patches(input_path, output_fn = None):
     denoised_mtx.to_hdf(output_fn, key='denoised')
 
 def stiching_subsampled_patches(input_path, output_fn):
+    
+    def get_files_len(filenames):
+        total_n = 0
+        for fn in filenames:
+            with open(fn) as f:
+                for i, _ in enumerate(f):
+                    pass
+                total_n += i # ignore first line
+        return total_n
+
     cts_files = sorted([x for x in os.listdir(input_path) if 'Denoised' in x])
     batches = list(set(['_'.join(x.split('_')[:2]) for x in cts_files]))
     
@@ -34,14 +44,7 @@ def stiching_subsampled_patches(input_path, output_fn):
     batch_dict = {}
     for _, batch in enumerate(batches):
         patch_cts = [x for x in cts_files if batch in x]
-        # patch_cts = [os.path.join(input_path, x) for x in patch_cts]
-        # get number of total barcodes
-        result = subprocess.check_output(
-            'wc -l {}/{}_*matrix.txt'.format(input_path, batch),
-            shell=True,
-            text=True)
-        # Get the total number lines minus 1 as the total number of barcodes in a batch
-        n_barcodes = int(result.split('\n')[-2].split(' ')[4:][0]) - len(patch_cts)
+        n_barcodes = get_files_len([os.path.join(input_path, x) for x in patch_cts])
         batch_dict[batch] = n_barcodes
 
     barcodes_counts = np.unique([x for x in batch_dict.values()], return_counts=True)
