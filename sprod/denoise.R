@@ -79,6 +79,13 @@ diagnose=opt$diagnose
 project_name=opt$projectID
 TopN=opt$TopN
 
+log = file(
+  file.path(
+    output_path,
+    paste(project_name,'.log', sep=''))
+  ,open='wt')
+sink(log, type='out')
+sink(log, type='message')
 cat(paste("N_PC:",N_PC,"umap",um,"R_ratio:",R_ratio,"U:",U,"K",K,"LAMBDA:",LAMBDA,"L_E:",L_E,"margin:",margin,"W_diag:",d,"project ID:",project_name,"diagnose mode on:",diagnose,"TopN:",TopN))
 cat("\n\n")
 
@@ -108,7 +115,13 @@ if ("Z" %in% colnames(C)){
     cat ("No correct colnumns are detected! Please check the colnames of spot_metadata!\n")
   }
 }
-IF=as.matrix(read.csv(image_features_fn,row.names = 1,header = T))
+# Make it flexible to accept csv and txt.
+if (substr(image_features_fn, nchar(image_features_fn)-3, nchar(image_features_fn)) == '.csv') {
+  IF=as.matrix(read.csv(image_features_fn,row.names = 1,header = T))
+} else {
+  IF=as.matrix(read.csv(image_features_fn,row.names = 1,header = T, sep='\t'))
+}
+
 if (any(rownames(E) != rownames(C)) || any(rownames(E)!=rownames(IF))) {
   stop("Spot IDs mismatch!")
   }
@@ -304,7 +317,7 @@ if (diagnose) {
     Stack_plot = Stack
   }
   
-  pdf(file.path(output_path, 'Diagnose_Spatial.pdf'))
+  pdf(file.path(output_path, paste(project_name, '_Diagnose_Spatial.pdf', sep='')))
   p = ggplot(Stack_plot,aes(x=x1,y=y1))+
     geom_line(aes(group=pair,color=value,alpha=value))+
     xlab("X")+
@@ -313,7 +326,7 @@ if (diagnose) {
   print(p)
   dev.off()
   
-  pdf(file.path(output_path, 'Diagnose_TSNE.pdf'))
+  pdf(file.path(output_path, paste(project_name, '_Diagnose_TSNE.pdf', sep='')))
   p = ggplot(Stack_plot,aes(x=tsne11,y=tsne12)) +
     geom_line(aes(group=pair
                   ,color=value
@@ -324,7 +337,7 @@ if (diagnose) {
   print(p)
   dev.off()
   
-  pdf(file.path(output_path, 'Diagnose_UMAP.pdf'))
+  pdf(file.path(output_path, paste(project_name, '_Diagnose_UMAP.pdf', sep='')))
   p = ggplot(Stack_plot,aes(x=umap11,y=umap12)) +
     geom_line(aes(group=pair
                   ,color=value
@@ -369,6 +382,6 @@ write.table(round(G,d=5),
 write.table(round(Y,d=5),
             file.path(output_path,Y_fn),
             sep='\t',row.names = T, col.names = T, quote=F)
-
+sink()
 
 
