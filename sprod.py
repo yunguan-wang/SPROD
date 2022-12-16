@@ -258,7 +258,7 @@ if __name__ == "__main__":
     image_feature_type = args.image_feature_type
     img_type = args.img_type
     pb = args.num_of_batches
-    custome_features_fn = args.custom_feature
+    custom_features_fn = args.custom_feature
     os_type = platform.system()
 
     # getting script path for supporting codes.
@@ -334,25 +334,25 @@ if __name__ == "__main__":
                 "{}_level_{}_features.csv".format(*image_feature_type.split("_")),
             )
             if not os.path.exists(feature_fn):
-                if os.path.exists(pseudo_img_feature_fn):
+                if custom_features_fn is not None:
+                    feature_fn = custom_features_fn
+                    print(
+                        "Using custom features."
+                    )
+                elif os.path.exists(pseudo_img_feature_fn):
                     feature_fn = pseudo_img_feature_fn
                     print(
                         "Image derived features not found, will use pseudo image features."
                     )
+                else:
+                    raise FileNotFoundError('Input features cannot found!')
+                
             if not os.path.exists(intermediate_path):
                 os.makedirs(intermediate_path)
+                
             cts_fn = os.path.join(input_path, "Counts.txt")
             n_spots = sum(1 for _ in open(cts_fn))
             pn = max(2,int(np.ceil(n_spots / 5000)))
-            if custome_features_fn is not None:
-                tmp_features = pd.read_csv(feature_fn, index_col=0)
-                custome_features = pd.read_csv(custome_features_fn, index_col=0)
-                assert (
-                    tmp_features.index == custome_features.index
-                ).all(), "Spots in custom feature matrix does not match those in exacted features."
-                pooled_features = pd.concat([tmp_features, custome_features], axis=1)
-                feature_fn = os.path.join(input_path, "pooled_features.csv")
-                pooled_features.to_csv(feature_fn)
             subsample_patches(input_path, intermediate_path, feature_fn, pn, pb)
             input_path = intermediate_path
         elif input_type == "single":
@@ -397,7 +397,10 @@ if __name__ == "__main__":
             pseudo_img_feature_fn = os.path.join(
                 input_path, "pseudo_image_features.csv"
             )
-            if os.path.exists(pseudo_img_feature_fn):
+            if custom_features_fn is not None:
+                feature_fn = custom_features_fn
+                print("Using custom features.")
+            elif os.path.exists(pseudo_img_feature_fn):
                 feature_fn = pseudo_img_feature_fn
                 logging.info(
                     "Image derived features not found, will use pseudo image features."
@@ -408,9 +411,9 @@ if __name__ == "__main__":
             logging.info("Image derived features found, will use these.")
 
         # Incorporate custom features
-        if custome_features_fn is not None:
+        if custom_features_fn is not None:
             tmp_features = pd.read_csv(feature_fn, index_col=0)
-            custome_features = pd.read_csv(custome_features_fn, index_col=0)
+            custome_features = pd.read_csv(custom_features_fn, index_col=0)
             assert (
                 tmp_features.index == custome_features.index
             ).all(), "Spots in custom feature matrix does not match those in exacted features."
@@ -497,5 +500,5 @@ if __name__ == "__main__":
     if input_type == "batch":
         stiching_script_path = os.path.join(sprod_path, "slide_seq_stiching.py")
         stiching_subsampled_patches(
-            output_path, os.path.join(output_path, "denoised_stiched.txt")
+            output_path, os.path.join(output_path, "denoised_stitched.txt")
         )
