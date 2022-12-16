@@ -39,11 +39,18 @@ def stiching_subsampled_patches(input_path, output_fn):
 
     cts_files = sorted([x for x in os.listdir(input_path) if 'Denoised' in x])
     batches = list(set(['_'.join(x.split('_')[:2]) for x in cts_files]))
+    n_patches = [
+        len([y for y in cts_files if x.split('_')[1]  == y.split('_')[1]]) for x in batches
+        ]
+    n_patches = max(n_patches)
     
     # Make sure all batches are good.
     batch_dict = {}
     for _, batch in enumerate(batches):
         patch_cts = [x for x in cts_files if batch in x]
+        if len(patch_cts) != n_patches:
+            print(batch, 'did not finished properly and will be skipped.')
+            continue
         n_barcodes = get_files_len([os.path.join(input_path, x) for x in patch_cts])
         batch_dict[batch] = n_barcodes
 
@@ -66,8 +73,8 @@ def stiching_subsampled_patches(input_path, output_fn):
         cts_array = np.zeros((n_total_cells, n_genes))
         top = 0
         barcode_list = []
+        print('Processing {}'.format(batch))
         for _, cts_fn in enumerate(patch_cts):
-            print('Processing {}'.format(cts_fn))
             cts = pd.read_csv(cts_fn, index_col=0, sep='\t')
             barcode_list += cts.index.tolist()
             delta = cts.shape[0]
