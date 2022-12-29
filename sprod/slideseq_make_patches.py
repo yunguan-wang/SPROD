@@ -103,8 +103,10 @@ def subsample_patches(input_path, output_path, feature_fn = None, n_patches = 10
         features = pd.read_csv(
             os.path.join(input_path, 'pseudo_image_features.csv'), index_col=0
         )
-    else:
+    elif feature_fn[-3:] == 'csv':
         features = pd.read_csv(feature_fn, index_col=0)
+    elif feature_fn[-3:] == 'txt':
+        features = pd.read_csv(feature_fn, index_col=0, sep='\t')
     patches = []
     for i in range(number_batches):
         patch_ids = np.random.randint(0,n_patches,size = cts.shape[0])
