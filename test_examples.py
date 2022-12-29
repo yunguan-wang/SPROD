@@ -42,8 +42,8 @@ print('Testing Sprod in batch mode')
 os.system(
     'python {} -y batch -pb 2 -ci if {} {}/batch_with_img'.format(denoise_jb, input_path, test_path))
 try:
-    test_denoised = pd.read_csv(os.path.join(test_path,'batch_with_img/denoised_stiched.txt'), sep='\t')
-    ref_denoised = pd.read_csv(os.path.join(output_path,'batch_with_img/denoised_stiched.txt'), sep='\t')
+    test_denoised = pd.read_csv(os.path.join(test_path,'batch_with_img/denoised_stitched.txt'), sep='\t')
+    ref_denoised = pd.read_csv(os.path.join(output_path,'batch_with_img/denoised_stitched.txt'), sep='\t')
     if (test_denoised - ref_denoised).sum().sum() <= 100:
         print('Sprod test batch mode succeeded!')
     else:
